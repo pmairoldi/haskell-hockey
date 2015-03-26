@@ -25,14 +25,20 @@ toSeason 3 = Playoffs
 openUrl :: String -> IO String
 openUrl url = simpleHTTP (getRequest url) >>= getResponseBody
 
+jsonpRequestParse :: IO String -> IO String
+jsonpRequestParse response = do 
+    body <- response
+    return $ jsonpToJson body
+
+requestParse :: IO String -> IO String
+requestParse response = do 
+    body <- response
+    return $ body
+
 get :: String -> JSONType -> IO String
 get url responseType
-    | responseType == JSONP = do 
-        body <- response
-        return $ jsonpToJson body
-    | otherwise = do 
-        body <- response
-        return $ body
+    | responseType == JSONP = jsonpRequestParse response
+    | otherwise = requestParse response
     where response = openUrl url
 
 dropAndReverse :: Eq a => a -> [a] -> [a]
@@ -89,5 +95,6 @@ getGameSummary :: Int -> Season -> Int -> IO String
 getGameSummary year season game = get (gameSummaryUrl (fullYear year) (fullGameId year season game)) JSONP
 
 main :: IO()
-main = do src <- getGameSummary 2014 Season 111 
-          print src
+main = do 
+    src <- getGameSummary 2014 Season 111 
+    print src
