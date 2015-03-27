@@ -1,16 +1,17 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveDataTypeable#-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
 
 import Network.HTTP
 import Formatting
-import Data.Text.Lazy as LT
-import Data.List as L
+import Data.Text.Lazy as LazyText
+import Data.List as List
 import Data.Aeson
--- import Data.Typeable
+import Control.Applicative as Applicative
 import GHC.Generics
+-- import Data.Typeable
 -- import Data.Data
 -- import Control.Monad.IO.Class
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.ByteString.Char8 as ByteString
 
 -- Load from environment variables
 currentYear :: Int
@@ -53,11 +54,11 @@ get url responseType
     where response = openUrl url
 
 dropAndReverse :: Eq a => a -> [a] -> [a]
-dropAndReverse delimiter content = L.reverse (L.dropWhile (/= delimiter) content)
+dropAndReverse delimiter content = List.reverse (List.dropWhile (/= delimiter) content)
 
 jsonpToJson :: String -> String
 jsonpToJson jsonp 
-    | and $ [("{" `L.isPrefixOf` jsonp), ("}" `L.isSuffixOf` jsonp)] = jsonp
+    | and $ [("{" `List.isPrefixOf` jsonp), ("}" `List.isSuffixOf` jsonp)] = jsonp
     | otherwise = dropAndReverse '}' (dropAndReverse '{' jsonp)
 
 -- Urls
@@ -87,7 +88,7 @@ boxscoreHTMLUrl year season game = "http://www.nhl.com/gamecenter/en/boxscore?id
 
 -- Formatters
 digitFormat :: Int -> Int -> String 
-digitFormat digits number = LT.unpack (format (left digits '0') number)
+digitFormat digits number = LazyText.unpack (format (left digits '0') number)
 
 formattedGame :: Int -> String
 formattedGame game = digitFormat 4 game
@@ -102,7 +103,7 @@ formattedDay :: Int -> String
 formattedDay day = digitFormat 2 day
 
 formattedYear :: Int -> String
-formattedYear year = LT.unpack (format (int) year)
+formattedYear year = LazyText.unpack (format (int) year)
 
 fullGameId :: Int -> Season -> Int -> String
 fullGameId year season game = (formattedYear year) ++ (formattedSeason season) ++ (formattedGame game)
@@ -137,16 +138,21 @@ getResultsResponse year month day = get (resultsUrl year month day) JSONP
 
 -- Parse JSON
 
-data Game = Game { ata :: String, hta :: String } deriving (Show, Generic)
-instance FromJSON Game
-instance ToJSON Game
+data Game = Game { awayId :: String, homeId :: String } deriving (Show, Generic)
+
+parseGame v = Game <$>
+    v .: "ata" <*>
+    v .: "hta"
+
+instance FromJSON Game where
+  parseJSON (Object v) = parseGame v
+  parseJSON _          = Applicative.empty
 
 data Results = Results { games :: [Game] } deriving (Show, Generic)
 instance FromJSON Results
-instance ToJSON Results
 
-stringToLazyByteString :: String -> LBS.ByteString
-stringToLazyByteString string = LBS.fromStrict (C.pack string)
+stringToLazyByteString :: String -> LazyByteString.ByteString
+stringToLazyByteString string = LazyByteString.fromStrict (ByteString.pack string)
 
 decodeResponse :: (FromJSON a) => IO String -> IO (Maybe a)
 decodeResponse response = do 
