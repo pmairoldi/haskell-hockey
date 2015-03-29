@@ -1,14 +1,14 @@
 module Hockey.Network (
-    JSONType(..),
+    ReturnType(..),
     get
 ) where
 
 import Network.HTTP
 import Data.List as List
 
-data JSONType = JSON | JSONP | HTML deriving (Enum, Show, Eq)
+data ReturnType = JSON | JSONP | HTML deriving (Enum, Show, Eq)
 
-get :: String -> JSONType -> IO String
+get :: String -> ReturnType -> IO String
 get url responseType
     | responseType == JSONP = jsonpRequestParse response
     | otherwise = requestParse response
