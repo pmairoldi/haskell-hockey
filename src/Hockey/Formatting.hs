@@ -60,6 +60,7 @@ dateFromComponents :: Integer -> Integer -> Integer -> Date
 dateFromComponents year month day = fromJust $ setYear year (epoch :: Date) >>= setMonth month >>= setDay day
 
 stringToInteger :: String -> Integer
+stringToInteger [] = 0
 stringToInteger s = read s :: Integer
 
 dateStringToComponents :: Text -> [Integer]

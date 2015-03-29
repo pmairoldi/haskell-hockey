@@ -1,11 +1,21 @@
 module Hockey.Requests (
+    playByPlayUrl,
+    summaryUrl,
+    eventVideoUrl,
+    scoreboardUrl,
+    boxscoreUrl,
+    gameSummaryUrl,
+    resultsUrl,
+    boxscoreHTMLUrl,
+    calendarUrl,
+    getResponse,
     -- getPlayByPlay,
     -- getSummary,
     -- getEventVideos,
-    -- getVideos,
+    -- getScoreboard,
     -- getBoxscore,
     -- getGameSummary,
-    getResults,
+    getResults
 ) where
 
 import Hockey.Network
@@ -16,30 +26,42 @@ import Data.UTC
 
 -- URLs
 
+-- year is season start year
 playByPlayUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 playByPlayUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/PlayByPlay.json", JSON)
 
+-- year is season start year
 summaryUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 summaryUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/Summary.json", JSON)
 
+-- year is season start year
 eventVideoUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 eventVideoUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/gc/gcgm.jsonp", JSONP)
 
-videoUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-videoUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/gc/gcsb.jsonp", JSONP)
+-- year is season start year
+scoreboardUrl :: Integer -> Season -> Integer -> (String, ReturnType)
+scoreboardUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/gc/gcsb.jsonp", JSONP)
 
+-- year is season start year
 boxscoreUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 boxscoreUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/gc/gcbx.jsonp", JSONP)
 
+-- not really useful
+-- year is season start year
 gameSummaryUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 gameSummaryUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/gc/gcgs.jsonp", JSONP)
 
+-- year is date year
 resultsUrl :: Integer -> Integer -> Integer -> (String, ReturnType)
 resultsUrl year month day = ("http://live.nhl.com/GameData/GCScoreboard/" ++ (fullDate year month day) ++ ".jsonp", JSONP)
 
+-- year is season start year
 boxscoreHTMLUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 boxscoreHTMLUrl year season game = ("http://www.nhl.com/gamecenter/en/boxscore?id=" ++ (fullGameId year season game), HTML)
 
+-- year is date year
+calendarUrl :: Integer -> Integer -> (String, ReturnType)
+calendarUrl year month = ("http://www.nhl.com/gamecenter/en/ajax/gamecalendarjson?year=" ++ (formattedYear year) ++ "&month=" ++ (formattedMonth month), JSON)
 -- HTTP Requests
 
 getResponse :: (String, ReturnType) -> IO String
@@ -58,8 +80,8 @@ getResponse tuple = get (fst tuple) (snd tuple)
 -- getEventVideos :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
 -- getEventVideos year season game = decodeResponse $ getResponse $ eventVideoUrl year season game
 --
--- getVideos :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getVideos year season game = decodeResponse $ getResponse $ videoUrl year season game
+-- getScoreboard :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
+-- getScoreboard year season game = decodeResponse $ getResponse $ scoreboardUrl year season game
 --
 -- getBoxscore :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
 -- getBoxscore year season game = decodeResponse $ getResponse $ boxscoreUrl year season game

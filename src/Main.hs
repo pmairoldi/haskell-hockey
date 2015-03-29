@@ -4,6 +4,7 @@
 import Hockey.Requests
 import Hockey.Types
 import Hockey.Formatting
+import Hockey.Parsing
 
 -- Load from environment variables
 currentYear :: Integer
@@ -14,5 +15,5 @@ currentSeason = Playoffs
 
 main :: IO()
 main = do
-    results <- getResults $ dateFromComponents 2015 3 28
+    results <- getResults $ dateFromComponents 2015 3 29
     print results

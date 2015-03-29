@@ -26,9 +26,25 @@ toSeason 1 = Preseason
 toSeason 2 = Season
 toSeason 3 = Playoffs
 
-data Game = Game { id :: Integer, awayId :: String, homeId :: String, caTV :: String, usTV :: String, gameState :: GameState } deriving (Show, Generic)
+data Game = Game {
+    id :: Integer,
+    awayId :: String,
+    homeId :: String,
+    caTV :: String,
+    usTV :: String,
+    gameState :: GameState,
+    awayScore :: Integer,
+    homeScore :: Integer,
+    awaySOG :: Integer,
+    homeSOG :: Integer
+} deriving (Show, Generic)
 
-data Results = Results { games :: [Game], currentDate :: Date, nextDate :: Date, prevDate :: Date } deriving (Show, Generic)
+data Results = Results {
+    games :: [Game],
+    currentDate :: Date,
+    nextDate :: Date,
+    prevDate :: Date
+} deriving (Show, Generic)
 
 data GameState = None | Before | Ongoing | Overtime | Final deriving (Enum, Show, Eq, Generic)
 
@@ -45,3 +61,16 @@ toGameState 2 = Before
 toGameState 3 = Ongoing
 toGameState 4 = Overtime
 toGameState 5 = Final
+
+-- data Scoreboard = Scoreboard {
+--     id :: Integer,
+--     awayId :: String,
+--     homeId :: String,
+--     caTV :: String,
+--     usTV :: String,
+--     gameState :: GameState,
+--     awayScore :: Integer,
+--     homeScore :: Integer,
+--     awaySOG :: Integer,
+--     homeSOG :: Integer
+-- } deriving (Show, Generic)
