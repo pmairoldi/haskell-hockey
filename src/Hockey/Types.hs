@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Hockey.Types (
+    AMPM(..),
     Season(..),
     fromSeason,
     toSeason,
@@ -13,6 +14,8 @@ module Hockey.Types (
 
 import GHC.Generics
 import Data.UTC
+
+data AMPM = AM | PM deriving (Enum, Show, Eq)
 
 data Season = Preseason | Season | Playoffs deriving (Enum, Show, Eq)
 
@@ -36,7 +39,9 @@ data Game = Game {
     awayScore :: Integer,
     homeScore :: Integer,
     awaySOG :: Integer,
-    homeSOG :: Integer
+    homeSOG :: Integer,
+    gameTime :: Time,
+    periodTime :: String
 } deriving (Show, Generic)
 
 data Results = Results {

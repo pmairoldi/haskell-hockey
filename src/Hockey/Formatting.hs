@@ -13,7 +13,15 @@ module Hockey.Formatting (
     stringToInteger,
     dateStringToComponents,
     unpackParseDate,
-    stringToLazyByteString
+    stringToLazyByteString,
+    offsetAMPMHour,
+    timeFromComponents,
+    timeStringToComponents,
+    parseAMPM,
+    stringContainsAMPM,
+    textContainsAMPM,
+    unpackParseTime,
+    removeGameTime
 ) where
 
 import Hockey.Types
@@ -25,6 +33,7 @@ import Data.List as List
 import Data.List.Split as Split
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.ByteString.Char8 as ByteString
+import Data.Char as Char
 
 digitFormat :: Int -> Integer -> String
 digitFormat digits number = LazyText.unpack (format (left digits '0') number)
@@ -73,3 +82,43 @@ unpackParseDate text =
 
 stringToLazyByteString :: String -> LazyByteString.ByteString
 stringToLazyByteString string = LazyByteString.fromStrict (ByteString.pack string)
+
+offsetAMPMHour :: Integer -> AMPM -> Integer
+offsetAMPMHour hour ampm
+    | and $ [hour == 12, ampm == AM] = 0
+    | and $ [hour == 12, ampm == PM] = 12
+    | ampm == PM = hour + 12
+    | otherwise = hour
+
+timeFromComponents :: Integer -> Integer -> AMPM -> Time
+timeFromComponents hour minute ampm =
+    let offsetHour = offsetAMPMHour hour ampm
+    in fromJust $ setHour offsetHour (midnight :: Time) >>= setMinute minute
+
+timeStringToComponents :: Text -> [Integer]
+timeStringToComponents text = List.map stringToInteger $ Split.splitOn ":" $ LazyText.unpack $ LazyText.takeWhile (/= ' ') text
+
+parseAMPM :: Text -> AMPM
+parseAMPM text
+    | ((LazyText.pack "AM") `LazyText.isSuffixOf` text) = AM
+    | ((LazyText.pack "PM") `LazyText.isSuffixOf` text) = PM
+    | otherwise = AM
+
+stringContainsAMPM :: String -> Bool
+stringContainsAMPM text = or $ [("AM" `List.isSuffixOf` text), ("PM" `List.isSuffixOf` text)]
+
+textContainsAMPM :: Text -> Bool
+textContainsAMPM text = or $ [((LazyText.pack "AM") `LazyText.isSuffixOf` text), ((LazyText.pack "PM") `LazyText.isSuffixOf` text)]
+
+unpackParseTime :: Text -> Time
+unpackParseTime text
+    | textContainsAMPM text =
+    let components = timeStringToComponents text
+        ampm = parseAMPM text
+    in timeFromComponents (components !! 0)  (components !! 1) ampm
+    | otherwise = timeFromComponents 0 0 AM
+
+removeGameTime :: String -> String
+removeGameTime value
+        | stringContainsAMPM value = ""
+        | otherwise = List.map Char.toLower value

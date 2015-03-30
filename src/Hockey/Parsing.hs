@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
 
 module Hockey.Parsing (
-    decodeResponse,
+    decodeResponse
 ) where
 
 import Hockey.Formatting
@@ -38,7 +38,9 @@ parseGame v = Game <$>
     fmap valueToInteger (v .: "ats") <*>
     fmap valueToInteger (v .: "hts") <*>
     fmap valueToInteger (v .:? "atsog") <*>
-    fmap valueToInteger (v .:? "htsog")
+    fmap valueToInteger (v .:? "htsog") <*>
+    fmap unpackParseTime (v .: "bs") <*>
+    fmap removeGameTime (v .: "bs")
 
 -- Results
 instance FromJSON Results where
