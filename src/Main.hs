@@ -12,10 +12,11 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- Test Modules
-import Control.Monad.IO.Class  (liftIO)
+import Control.Monad.IO.Class (liftIO)
 import Database.Persist
-import Database.Persist.Sqlite
+import Database.Persist.Postgresql
 import Database.Persist.TH
+import Control.Monad.Logger (runStdoutLoggingT)
 
 -- My Modules
 import Hockey.Requests
@@ -42,11 +43,16 @@ BlogPost
     deriving Show
 |]
 
+-- this is not type safe!
+connStr = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi port=5432"
+
 main :: IO ()
-main = runSqlite ":memory:" $ do
+main = runStdoutLoggingT $ withPostgresqlPool connStr 10 $ \pool ->
+     liftIO $ flip runSqlPersistMPool pool $ do
+
     runMigration migrateAll
 
-    johnId <- insert $ Person "John Doe" $ Just 35
+    johnId <- insert $ Person "John Doe" (Just 35)
     janeId <- insert $ Person "Jane Doe" Nothing
 
     insert $ BlogPost "My fr1st p0st" johnId
@@ -58,8 +64,8 @@ main = runSqlite ":memory:" $ do
     john <- get johnId
     liftIO $ print (john :: Maybe Person)
 
-    delete janeId
-    deleteWhere [BlogPostAuthorId ==. johnId]
+    -- delete janeId
+    -- deleteWhere [BlogPostAuthorId ==. johnId]
 
 -- main :: IO()
 -- main = do
