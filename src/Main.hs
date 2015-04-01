@@ -12,11 +12,11 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- Test Modules
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class
+import Control.Monad.Logger
 import Database.Persist
 import Database.Persist.Postgresql
 import Database.Persist.TH
-import Control.Monad.Logger (runStdoutLoggingT)
 
 -- My Modules
 import Hockey.Requests
@@ -31,6 +31,12 @@ currentYear = 2014
 currentSeason :: Season
 currentSeason = Playoffs
 
+-- main :: IO()
+-- main = do
+--     results <- getResults $ dateFromComponents 2015 3 29
+--     print results
+
+
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
@@ -43,31 +49,39 @@ BlogPost
     deriving Show
 |]
 
--- this is not type safe!
-connStr = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi port=5432"
+data Database = Database {
+    host :: String,
+    name :: String,
+    user :: String,
+    password :: String,
+    port :: Integer
+} deriving (Show)
+
+
+connStr :: ConnectionString
+connStr = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi password= port=5432"
+
+query :: MonadIO m => SqlPersistM a -> ConnectionPool -> m a
+query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
+
+db :: SqlPersistM a -> IO a
+db stmt = runStderrLoggingT $ withPostgresqlPool connStr 10 $ query stmt
 
 main :: IO ()
-main = runStdoutLoggingT $ withPostgresqlPool connStr 10 $ \pool ->
-     liftIO $ flip runSqlPersistMPool pool $ do
+main = db $ do
+        runMigration migrateAll
 
-    runMigration migrateAll
+        johnId <- insert $ Person "John Doe" $ Just 35
+        janeId <- insert $ Person "Jane Doe" Nothing
 
-    johnId <- insert $ Person "John Doe" (Just 35)
-    janeId <- insert $ Person "Jane Doe" Nothing
+        insert $ BlogPost "My fr1st p0st" johnId
+        insert $ BlogPost "One more for good measure" johnId
 
-    insert $ BlogPost "My fr1st p0st" johnId
-    insert $ BlogPost "One more for good measure" johnId
+        oneJohnPost <- selectList [BlogPostAuthorId ==. johnId] [LimitTo 1]
+        liftIO $ print (oneJohnPost :: [Entity BlogPost])
 
-    oneJohnPost <- selectList [BlogPostAuthorId ==. johnId] [LimitTo 1]
-    liftIO $ print (oneJohnPost :: [Entity BlogPost])
+        john <- get johnId
+        liftIO $ print (john :: Maybe Person)
 
-    john <- get johnId
-    liftIO $ print (john :: Maybe Person)
-
-    -- delete janeId
-    -- deleteWhere [BlogPostAuthorId ==. johnId]
-
--- main :: IO()
--- main = do
---     results <- getResults $ dateFromComponents 2015 3 29
---     print results
+        delete janeId
+        deleteWhere [BlogPostAuthorId ==. johnId]
