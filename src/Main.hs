@@ -16,8 +16,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Control.Monad.Trans.Control
 import Database.Persist
-import Database.Persist.Postgresql
-import Database.Persist.Sqlite
+import Database.Persist.Postgresql hiding (Connection)
+import Database.Persist.Sqlite hiding (Connection)
 import Database.Persist.TH
 import Data.Text
 -- My Modules
@@ -67,18 +67,24 @@ postgresConnection = "host=localhost dbname=pierremarcairoldi user=pierremarcair
 sqliteConnection :: Text
 sqliteConnection = ":memory:"
 
-query :: (MonadIO m) => SqlPersistM a -> ConnectionPool -> m a
+type Query m a = ConnectionPool -> m a
+type Driver m a = Query m a -> m a
+type Logger a b = a -> b
+type Connection m a b = Query m a -> b
+type Result a b = SqlPersistM a -> b
+
+query :: (MonadIO m) => SqlPersistM a -> Query m a
 query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
 
 -- have way to sway between types
-postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => (ConnectionPool -> m a) -> m a
+postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Driver m a
 postgres query = withPostgresqlPool postgresConnection connectionNumber query
 
-sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => (ConnectionPool -> m a) -> m a
+sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Driver m a
 sqlite query = withSqlitePool sqliteConnection connectionNumber query
 
-db :: (MonadIO m, MonadIO m1) => ((ConnectionPool -> m1 a1) -> LoggingT m a) -> SqlPersistM a1 -> m a
-db connection stmt = runStderrLoggingT $ connection (query stmt)
+db :: MonadIO m => Logger b c -> Connection m a b -> Result a c
+db logger connection stmt = logger $ connection $ query stmt
 
 testDB =  do
     runMigration migrateAll
@@ -100,5 +106,5 @@ testDB =  do
 
 main :: IO ()
 main = do
-    db postgres testDB
-    db sqlite testDB
+    db runStderrLoggingT postgres testDB
+    db runStderrLoggingT sqlite testDB
