@@ -14,10 +14,12 @@
 -- Test Modules
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Control.Monad.Trans.Control
 import Database.Persist
 import Database.Persist.Postgresql
+import Database.Persist.Sqlite
 import Database.Persist.TH
-
+import Data.Text
 -- My Modules
 import Hockey.Requests
 import Hockey.Types
@@ -35,8 +37,6 @@ currentSeason = Playoffs
 -- main = do
 --     results <- getResults $ dateFromComponents 2015 3 29
 --     print results
-
-
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
@@ -58,30 +58,47 @@ data Database = Database {
 } deriving (Show)
 
 
-connStr :: ConnectionString
-connStr = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi password= port=5432"
+connectionNumber :: Int
+connectionNumber = 10
 
-query :: MonadIO m => SqlPersistM a -> ConnectionPool -> m a
+postgresConnection :: ConnectionString
+postgresConnection = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi password= port=5432"
+
+sqliteConnection :: Text
+sqliteConnection = ":memory:"
+
+query :: (MonadIO m) => SqlPersistM a -> ConnectionPool -> m a
 query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
 
-db :: SqlPersistM a -> IO a
-db stmt = runStderrLoggingT $ withPostgresqlPool connStr 10 $ query stmt
+-- have way to sway between types
+postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => (ConnectionPool -> m a) -> m a
+postgres query = withPostgresqlPool postgresConnection connectionNumber query
+
+sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => (ConnectionPool -> m a) -> m a
+sqlite query = withSqlitePool sqliteConnection connectionNumber query
+
+db :: (MonadIO m, MonadIO m1) => ((ConnectionPool -> m1 a1) -> LoggingT m a) -> SqlPersistM a1 -> m a
+db connection stmt = runStderrLoggingT $ connection (query stmt)
+
+testDB =  do
+    runMigration migrateAll
+
+    johnId <- insert $ Person "John Doe" $ Just 35
+    janeId <- insert $ Person "Jane Doe" Nothing
+
+    insert $ BlogPost "My fr1st p0st" johnId
+    insert $ BlogPost "One more for good measure" johnId
+
+    oneJohnPost <- selectList [BlogPostAuthorId ==. johnId] [LimitTo 1]
+    liftIO $ print (oneJohnPost :: [Entity BlogPost])
+
+    john <- get johnId
+    liftIO $ print (john :: Maybe Person)
+
+    delete janeId
+    deleteWhere [BlogPostAuthorId ==. johnId]
 
 main :: IO ()
-main = db $ do
-        runMigration migrateAll
-
-        johnId <- insert $ Person "John Doe" $ Just 35
-        janeId <- insert $ Person "Jane Doe" Nothing
-
-        insert $ BlogPost "My fr1st p0st" johnId
-        insert $ BlogPost "One more for good measure" johnId
-
-        oneJohnPost <- selectList [BlogPostAuthorId ==. johnId] [LimitTo 1]
-        liftIO $ print (oneJohnPost :: [Entity BlogPost])
-
-        john <- get johnId
-        liftIO $ print (john :: Maybe Person)
-
-        delete janeId
-        deleteWhere [BlogPostAuthorId ==. johnId]
+main = do
+    db postgres testDB
+    db sqlite testDB

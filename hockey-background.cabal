@@ -60,7 +60,7 @@ executable hockey-background
   -- other-extensions:
 
   -- Other library packages from which modules are imported.
-  build-depends:       base, HTTP, formatting, text, transformers, aeson, bytestring, utc, split, scientific, persistent, persistent-template, persistent-sqlite, persistent-postgresql, monad-logger
+  build-depends:       base, HTTP, formatting, text, transformers, aeson, bytestring, utc, split, scientific, persistent, persistent-template, persistent-sqlite, persistent-postgresql, monad-logger, monad-control
 
   -- Directories containing source files.
   hs-source-dirs:      src
