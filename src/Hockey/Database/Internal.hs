@@ -3,15 +3,14 @@
 
 module Hockey.Database.Internal (
     Database(..),
+    DatabaseType(..),
     Query,
     Driver,
     Logger,
     Connection,
     Result,
     module Database.Persist,
-    run,
-    postgres,
-    sqlite
+    connect
 )
 
 where
@@ -22,7 +21,8 @@ import Database.Persist.Sqlite hiding (Connection)
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Control.Monad.Trans.Control
-import Data.Text
+import Data.Text as T
+import Data.ByteString.Char8 as BS
 
 type Query m a = ConnectionPool -> m a
 type Driver m a = Query m a -> m a
@@ -30,12 +30,16 @@ type Logger a b = a -> b
 type Connection m a b = Query m a -> b
 type Result a b = SqlPersistM a -> b
 
+data DatabaseType = Postgres | SQLite deriving (Enum, Show, Eq)
+
 data Database = Database {
-    host :: String,
+    dbType :: DatabaseType,
     name :: String,
+    host :: String,
     user :: String,
     password :: String,
-    port :: Integer
+    port :: Int,
+    connections :: Int
 } deriving (Show)
 
 query :: (MonadIO m) => SqlPersistM a -> Query m a
@@ -47,20 +51,24 @@ db logger connection stmt = logger $ connection $ query stmt
 logger :: MonadIO m => LoggingT m a -> m a
 logger = runStderrLoggingT
 
-run database queries = db logger database queries
+postgresConnection :: Database -> ConnectionString
+postgresConnection database = BS.pack $ "host=" ++ (host database) ++ " dbname=" ++ (name database) ++ " user=" ++ (user database) ++  " password=" ++ (password database) ++ " port=" ++ (show $ port database)
 
---refactor to user Database
-connectionNumber :: Int
-connectionNumber = 10
+sqliteConnection :: Database -> Text
+sqliteConnection database
+    | (name database) == [] = ":memory:"
+    | otherwise = T.pack (name database)
 
-postgresConnection :: ConnectionString
-postgresConnection = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi password= port=5432"
+postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Database -> Driver m a
+postgres database query = withPostgresqlPool (postgresConnection database) (connections database) query
 
-sqliteConnection :: Text
-sqliteConnection = ":memory:"
+sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Database -> Driver m a
+sqlite database query = withSqlitePool (sqliteConnection database) (connections database) query
 
-postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Driver m a
-postgres query = withPostgresqlPool postgresConnection connectionNumber query
+connection :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Database -> Driver m a
+connection database = case (dbType database) of
+    Postgres -> postgres database
+    SQLite -> sqlite database
 
-sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Driver m a
-sqlite query = withSqlitePool sqliteConnection connectionNumber query
+-- connect :: (MonadIO m, MonadIO n) => Connection m a (LoggingT n b) -> Result a (n b)
+connect database queries = db logger (connection database) queries

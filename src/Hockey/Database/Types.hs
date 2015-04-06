@@ -42,4 +42,4 @@ Game
     deriving Show
 |]
 
-migrate database = run database (runMigration migrateAll)
+migrate database = connect database (runMigration migrateAll)

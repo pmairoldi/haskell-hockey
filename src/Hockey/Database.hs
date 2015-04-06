@@ -4,9 +4,9 @@ module Hockey.Database (
     module Hockey.Database.Types,
     module Hockey.Database.Formatting,
     insertGames,
-    postgres,
-    sqlite,
-    run
+    connect,
+    Database(..),
+    DatabaseType(..)
 )
 
 where

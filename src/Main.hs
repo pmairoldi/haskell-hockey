@@ -17,7 +17,7 @@ fetchResults date = do
 
 runGameInsert database date = do
     results <- fetchResults date
-    run database $ insertGames results
+    connect database $ insertGames results
 
 processRange database begin end
     | begin == end = runGameInsert database begin
@@ -29,10 +29,12 @@ processRange database begin end
         processRange database begin (addDays 1 end)
     | otherwise = return ()
 
+database = (Database SQLite "hi" "" "" "" 0 10)
+
 main :: IO ()
 main = do
-    migrate postgres
+    migrate database
 
-    processRange postgres (dateFromComponents 2014 4 6) (dateFromComponents 2014 4 4)
+    -- processRange dbConnection (dateFromComponents 2014 4 6) (dateFromComponents 2014 4 4)
 
     return ()
