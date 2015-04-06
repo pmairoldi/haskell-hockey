@@ -15,10 +15,12 @@ fetchResults date = do
         Just value -> return (processGames (games value) (currentDate value))
         Nothing -> return []
 
+runGameInsert :: Database -> Day -> IO ()
 runGameInsert database date = do
     results <- fetchResults date
     connect database $ insertGames results
 
+processRange :: Database -> Day -> Day -> IO ()
 processRange database begin end
     | begin == end = runGameInsert database begin
     | begin < end = do
@@ -29,12 +31,13 @@ processRange database begin end
         processRange database begin (addDays 1 end)
     | otherwise = return ()
 
-database = (Database SQLite "hi" "" "" "" 0 10)
+database :: Database
+database = (Database SQLite "test.sqlite" "" "" "" 0 10)
 
 main :: IO ()
 main = do
     migrate database
 
-    -- processRange dbConnection (dateFromComponents 2014 4 6) (dateFromComponents 2014 4 4)
+    processRange database (dateFromComponents 2014 4 6) (dateFromComponents 2014 4 4)
 
     return ()
