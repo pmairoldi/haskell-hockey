@@ -1,110 +1,38 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
-
-{-# LANGUAGE EmptyDataDecls #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-
--- Test Modules
-import Control.Monad.IO.Class
-import Control.Monad.Logger
-import Control.Monad.Trans.Control
-import Database.Persist
-import Database.Persist.Postgresql hiding (Connection)
-import Database.Persist.Sqlite hiding (Connection)
-import Database.Persist.TH
-import Data.Text
+import Data.Time.Calendar
+import Data.Time.LocalTime
+import Data.Maybe
 -- My Modules
 import Hockey.Requests
-import Hockey.Types
+import Hockey.Types as T
+
 import Hockey.Formatting
-import Hockey.Parsing
+import Hockey.Database as DB
 
--- Load from environment variables
-currentYear :: Integer
-currentYear = 2014
+fetchResults :: Day -> IO [DB.Game]
+fetchResults date = do
+    results <- (getResults date)
+    case results of
+        Just value -> return (processGames (games value) (currentDate value))
+        Nothing -> return []
 
-currentSeason :: Season
-currentSeason = Playoffs
+runGameInsert database date = do
+    results <- fetchResults date
+    run database $ insertGames results
 
--- main :: IO()
--- main = do
---     results <- getResults $ dateFromComponents 2015 3 29
---     print results
-
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-Person
-    name String
-    age Int Maybe
-    deriving Show
-BlogPost
-    title String
-    authorId PersonId
-    deriving Show
-|]
-
-data Database = Database {
-    host :: String,
-    name :: String,
-    user :: String,
-    password :: String,
-    port :: Integer
-} deriving (Show)
-
-
-connectionNumber :: Int
-connectionNumber = 10
-
-postgresConnection :: ConnectionString
-postgresConnection = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi password= port=5432"
-
-sqliteConnection :: Text
-sqliteConnection = ":memory:"
-
-type Query m a = ConnectionPool -> m a
-type Driver m a = Query m a -> m a
-type Logger a b = a -> b
-type Connection m a b = Query m a -> b
-type Result a b = SqlPersistM a -> b
-
-query :: (MonadIO m) => SqlPersistM a -> Query m a
-query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
-
--- have way to sway between types
-postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Driver m a
-postgres query = withPostgresqlPool postgresConnection connectionNumber query
-
-sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Driver m a
-sqlite query = withSqlitePool sqliteConnection connectionNumber query
-
-db :: MonadIO m => Logger b c -> Connection m a b -> Result a c
-db logger connection stmt = logger $ connection $ query stmt
-
-testDB =  do
-    runMigration migrateAll
-
-    johnId <- insert $ Person "John Doe" $ Just 35
-    janeId <- insert $ Person "Jane Doe" Nothing
-
-    insert $ BlogPost "My fr1st p0st" johnId
-    insert $ BlogPost "One more for good measure" johnId
-
-    oneJohnPost <- selectList [BlogPostAuthorId ==. johnId] [LimitTo 1]
-    liftIO $ print (oneJohnPost :: [Entity BlogPost])
-
-    john <- get johnId
-    liftIO $ print (john :: Maybe Person)
-
-    delete janeId
-    deleteWhere [BlogPostAuthorId ==. johnId]
+processRange database begin end
+    | begin == end = runGameInsert database begin
+    | begin < end = do
+        runGameInsert database begin
+        processRange database (addDays 1 begin) end
+    | begin > end = do
+        runGameInsert database end
+        processRange database begin (addDays 1 end)
+    | otherwise = return ()
 
 main :: IO ()
 main = do
-    db runStderrLoggingT postgres testDB
-    db runStderrLoggingT sqlite testDB
+    migrate postgres
+
+    processRange postgres (dateFromComponents 2014 4 6) (dateFromComponents 2014 4 4)
+
+    return ()

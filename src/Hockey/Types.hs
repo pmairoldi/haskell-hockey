@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Hockey.Types (
     AMPM(..),
@@ -13,12 +14,53 @@ module Hockey.Types (
 ) where
 
 import GHC.Generics
-import Data.UTC
+import Data.Time.Calendar
+import Data.Time.LocalTime
+import Database.Persist.TH
 
 data AMPM = AM | PM deriving (Enum, Show, Eq)
 
 data Season = Preseason | Season | Playoffs deriving (Enum, Show, Eq)
 
+data GameState = None | Before | Ongoing | Overtime | Final deriving (Enum, Show, Read, Eq, Generic)
+derivePersistField "GameState"
+
+data Game = Game {
+    gameId :: Int,
+    awayId :: String,
+    homeId :: String,
+    caTV :: String,
+    usTV :: String,
+    gameState :: GameState,
+    awayScore :: Int,
+    homeScore :: Int,
+    awaySog :: Int,
+    homeSog :: Int,
+    gameTime :: TimeOfDay,
+    periodTime :: String
+} deriving (Show, Generic)
+
+data Results = Results {
+    games :: [Game],
+    currentDate :: Day,
+    nextDate :: Day,
+    prevDate :: Day
+} deriving (Show, Generic)
+
+-- data Scoreboard = Scoreboard {
+--     id :: Integer,
+--     awayId :: String,
+--     homeId :: String,
+--     caTV :: String,
+--     usTV :: String,
+--     gameState :: GameState,
+--     awayScore :: Integer,
+--     homeScore :: Integer,
+--     awaySOG :: Integer,
+--     homeSOG :: Integer
+-- } deriving (Show, Generic)
+
+-- Conversion Functions
 fromSeason :: Season -> Integer
 fromSeason Preseason = 1
 fromSeason Season = 2
@@ -28,30 +70,6 @@ toSeason :: Integer -> Season
 toSeason 1 = Preseason
 toSeason 2 = Season
 toSeason 3 = Playoffs
-
-data Game = Game {
-    id :: Integer,
-    awayId :: String,
-    homeId :: String,
-    caTV :: String,
-    usTV :: String,
-    gameState :: GameState,
-    awayScore :: Integer,
-    homeScore :: Integer,
-    awaySOG :: Integer,
-    homeSOG :: Integer,
-    gameTime :: Time,
-    periodTime :: String
-} deriving (Show, Generic)
-
-data Results = Results {
-    games :: [Game],
-    currentDate :: Date,
-    nextDate :: Date,
-    prevDate :: Date
-} deriving (Show, Generic)
-
-data GameState = None | Before | Ongoing | Overtime | Final deriving (Enum, Show, Eq, Generic)
 
 fromGameState :: GameState -> Integer
 fromGameState None = 1
@@ -66,16 +84,3 @@ toGameState 2 = Before
 toGameState 3 = Ongoing
 toGameState 4 = Overtime
 toGameState 5 = Final
-
--- data Scoreboard = Scoreboard {
---     id :: Integer,
---     awayId :: String,
---     homeId :: String,
---     caTV :: String,
---     usTV :: String,
---     gameState :: GameState,
---     awayScore :: Integer,
---     homeScore :: Integer,
---     awaySOG :: Integer,
---     homeSOG :: Integer
--- } deriving (Show, Generic)

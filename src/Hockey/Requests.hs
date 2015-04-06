@@ -22,7 +22,7 @@ import Hockey.Network
 import Hockey.Parsing
 import Hockey.Types
 import Hockey.Formatting
-import Data.UTC
+import Data.Time.Calendar
 
 -- URLs
 
@@ -91,5 +91,7 @@ getResponse tuple = get (fst tuple) (snd tuple)
 
 -- End add concrete types
 
-getResults :: Date -> IO (Maybe Results)
-getResults date = decodeResponse $ getResponse $ resultsUrl (year date) (month date) (day date)
+getResults :: Day -> IO (Maybe Results)
+getResults date =
+    let tripleDate = toGregorian date
+    in decodeResponse $ getResponse $ resultsUrl (year tripleDate) (month tripleDate) (day tripleDate)

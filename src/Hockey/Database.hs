@@ -1,33 +1,22 @@
-{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Hockey.Database (
-
+    module Hockey.Database.Types,
+    module Hockey.Database.Formatting,
+    insertGames,
+    postgres,
+    sqlite,
+    run
 )
 
 where
 
--- import Control.Monad.IO.Class  (liftIO)
--- import Database.Persist
--- import Database.Persist.Postgresql
--- import Database.Persist.TH
---
--- share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
---     Person
---         name String
---         age Int Maybe
---         deriving Show
---     BlogPost
---         title String
---         authorId PersonId
---         deriving Show
---     |]
---
--- connStr = "host=localhost dbname=pierremarcairoldi user=pierremarcairoldi port=5432"
+import Hockey.Database.Internal
+import Hockey.Database.Formatting
+import Hockey.Database.Types
+-- db actions
+
+insertGames [] = return ()
+insertGames (x:xs) = do
+    upsert x []
+    insertGames xs

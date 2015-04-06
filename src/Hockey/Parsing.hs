@@ -17,8 +17,8 @@ decodeResponse response = do
     return $ decode (stringToLazyByteString rsp)
 
 -- Stupid NHL returning "" in their json when it is a number
-valueToInteger :: Maybe Value -> Integer
-valueToInteger (Just (Number n)) = coefficient n
+valueToInteger :: Maybe Value -> Int
+valueToInteger (Just (Number n)) = fromInteger (coefficient n)
 valueToInteger _ = 0
 
 -- GameState
