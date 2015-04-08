@@ -4,13 +4,7 @@
 module Hockey.Database.Internal (
     Database(..),
     DatabaseType(..),
-    Query,
-    Driver,
-    Logger,
-    Connection,
-    Result,
-    module Database.Persist,
-    connect
+    process
 )
 
 where
@@ -70,5 +64,5 @@ connection database = case (dbType database) of
     Postgres -> postgres database
     SQLite -> sqlite database
 
-connect :: (MonadBaseControl IO m, MonadIO m) => Database -> Result a (m a)
-connect database queries = db logger (connection database) queries
+process :: (MonadBaseControl IO m, MonadIO m) => Database -> Result a (m a)
+process database queries = db logger (connection database) queries

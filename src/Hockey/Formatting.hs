@@ -1,4 +1,6 @@
 module Hockey.Formatting (
+    module Data.Time.Calendar,
+    module Data.Time.LocalTime,
     digitFormat,
     formattedGame,
     formattedSeason,

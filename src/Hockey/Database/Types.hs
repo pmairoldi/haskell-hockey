@@ -10,7 +10,8 @@
 
 module Hockey.Database.Types (
     migrate,
-    Game(..)
+    Game(..),
+    Video(..)
 )
 
 where
@@ -23,6 +24,7 @@ import Hockey.Types (GameState(..))
 import Data.Time.Calendar
 import Data.Time.LocalTime
 
+--add Maybe monad to some type
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
     gameId Int
@@ -42,6 +44,16 @@ Game
     homeStatus String
     UniqueGameId gameId
     deriving Show
+Video
+    gameId Int
+    awayId String
+    homeId String
+    awayHighlight String
+    homeHighlight String
+    awayCondense String
+    homeCondense String
+    UniqueVideoId gameId
+    deriving Show
 |]
 
-migrate database = connect database (runMigration migrateAll)
+migrate database = database `process` (runMigration migrateAll)
