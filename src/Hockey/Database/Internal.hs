@@ -42,14 +42,14 @@ data Database = Database {
     connections :: Int
 } deriving (Show)
 
+logger :: MonadIO m => LoggingT m a -> m a
+logger = runStderrLoggingT
+
 query :: (MonadIO m) => SqlPersistM a -> Query m a
 query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
 
 db :: MonadIO m => Logger b c -> Connection m a b -> Result a c
 db logger connection stmt = logger $ connection $ query stmt
-
-logger :: MonadIO m => LoggingT m a -> m a
-logger = runStderrLoggingT
 
 postgresConnection :: Database -> ConnectionString
 postgresConnection database = BS.pack $ "host=" ++ (host database) ++ " dbname=" ++ (name database) ++ " user=" ++ (user database) ++  " password=" ++ (password database) ++ " port=" ++ (show $ port database)

@@ -25,7 +25,11 @@ module Hockey.Formatting (
     year,
     month,
     day,
-    splitCommaDelimited
+    splitCommaDelimited,
+    periodFromPeriodTime,
+    valueToInteger,
+    splitAndJoin,
+    joinStrings
 ) where
 
 import Hockey.Types
@@ -39,6 +43,8 @@ import Data.List.Split as Split
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.ByteString.Char8 as ByteString
 import Data.Char as Char
+import Data.Aeson
+import Data.Scientific
 
 digitFormat :: Int -> Integer -> String
 digitFormat digits number = LazyText.unpack (format (left digits '0') number)
@@ -145,3 +151,31 @@ day (_,_,x) = toInteger x
 
 splitCommaDelimited :: String -> [String]
 splitCommaDelimited xs = Split.splitOn "'" xs
+
+periodFromPeriodTime :: String -> Int
+periodFromPeriodTime t
+    | "1st" `List.isSuffixOf` t = 1
+    | "2nd" `List.isSuffixOf` t = 2
+    | "3rd" `List.isSuffixOf` t = 3
+    | t == "final" = 3
+    | "ot" `List.isSuffixOf` t =
+        let offset = stringToInt $ List.filter isDigit (List.dropWhile (/= ' ') t)
+        in case offset of
+            0 -> 4
+            otherwise -> 3 + offset
+    | "so" `List.isSuffixOf` t = 5
+    | otherwise = 0
+
+    -- Stupid NHL returning "" in their json when it is a number
+valueToInteger :: Maybe Value -> Int
+valueToInteger (Just (Number n)) = fromInteger (coefficient n)
+valueToInteger _ = 0
+
+splitAndJoin :: String -> String
+splitAndJoin s = List.intercalate"," $ (Split.splitOn ", " s)
+
+joinStrings :: String -> String -> String
+joinStrings [] [] = ""
+joinStrings s1 [] = s1
+joinStrings [] s2 = s2
+joinStrings s1 s2 = s1 ++ "," ++ s2

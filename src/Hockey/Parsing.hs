@@ -9,17 +9,11 @@ import Hockey.Formatting
 import Data.Aeson
 import Control.Applicative as Applicative
 import Hockey.Types
-import Data.Scientific
 
 decodeResponse :: (FromJSON a) => IO String -> IO (Maybe a)
 decodeResponse response = do
     rsp <- response
     return $ decode (stringToLazyByteString rsp)
-
--- Stupid NHL returning "" in their json when it is a number
-valueToInteger :: Maybe Value -> Int
-valueToInteger (Just (Number n)) = fromInteger (coefficient n)
-valueToInteger _ = 0
 
 -- GameState
 instance FromJSON GameState
@@ -33,8 +27,8 @@ parseGame v = Game <$>
     v .: "id" <*>
     fmap unpackToLower (v .: "ata") <*>
     fmap unpackToLower (v .: "hta") <*>
-    v .: "canationalbroadcasts" <*>
-    v .: "usnationalbroadcasts" <*>
+    fmap splitAndJoin (v .: "canationalbroadcasts") <*>
+    fmap splitAndJoin (v .: "usnationalbroadcasts") <*>
     fmap toGameState (v .:"gs") <*>
     fmap valueToInteger (v .: "ats") <*>
     fmap valueToInteger (v .: "hts") <*>

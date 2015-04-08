@@ -2,8 +2,7 @@
 
 module Hockey.Database (
     module Hockey.Database.Types,
-    module Hockey.Database.Formatting,
-    insertGames,
+    upsertMany,
     connect,
     Database(..),
     DatabaseType(..)
@@ -12,11 +11,9 @@ module Hockey.Database (
 where
 
 import Hockey.Database.Internal
-import Hockey.Database.Formatting
 import Hockey.Database.Types
--- db actions
 
-insertGames [] = return ()
-insertGames (x:xs) = do
+upsertMany [] = return ()
+upsertMany (x:xs) = do
     upsert x []
-    insertGames xs
+    upsertMany xs

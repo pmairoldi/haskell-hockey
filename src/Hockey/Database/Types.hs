@@ -30,14 +30,16 @@ Game
     homeId String
     date Day
     time TimeOfDay
-    caTv String
-    usTv String
+    tv String
     state GameState
+    period Int
     periodTime String
     awayScore Int
     homeScore Int
     awaySog Int
     homeSog Int
+    awayStatus String
+    homeStatus String
     UniqueGameId gameId
     deriving Show
 |]
