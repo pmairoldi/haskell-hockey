@@ -4,13 +4,15 @@
 module Hockey.Types (
     AMPM(..),
     Season(..),
-    fromSeason,
-    toSeason,
     Game(..),
     Results(..),
     GameState(..),
+    GameDate(..),
+    GameDates(..),
     fromGameState,
-    toGameState
+    toGameState,
+    fromSeason,
+    toSeason,
 ) where
 
 import GHC.Generics
@@ -20,7 +22,7 @@ import Database.Persist.TH
 
 data AMPM = AM | PM deriving (Enum, Show, Eq)
 
-data Season = Preseason | Season | Playoffs deriving (Enum, Show, Eq)
+data Season = Preseason | Season | Playoffs deriving (Enum, Show, Read, Eq, Generic)
 
 data GameState = None | Before | Ongoing | Overtime | Final deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "GameState"
@@ -45,6 +47,16 @@ data Results = Results {
     currentDate :: Day,
     nextDate :: Day,
     prevDate :: Day
+} deriving (Show, Generic)
+
+data GameDate = GameDate {
+    date :: Day,
+    season :: Season,
+    gameNumber :: Int
+} deriving (Show, Generic)
+
+data GameDates = GameDates {
+    dates :: [GameDate]
 } deriving (Show, Generic)
 
 -- data Scoreboard = Scoreboard {

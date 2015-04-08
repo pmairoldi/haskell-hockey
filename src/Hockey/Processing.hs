@@ -1,5 +1,6 @@
 module Hockey.Processing (
     module DB,
+    getDates,
     getGames,
     getVideos
 )
@@ -11,6 +12,20 @@ import Hockey.Types as T
 import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
+
+fetchDates :: Day -> IO [T.GameDate]
+fetchDates date = do
+    results <- (getGameDates date)
+    case results of
+        Just value -> return (dates value)
+        Nothing -> return []
+
+getDates :: [Day] -> IO [T.GameDate]
+getDates [] = return []
+getDates (x:xs) = do
+        h <- fetchDates x
+        t <- getDates xs
+        return $ h ++ t
 
 dbGame :: T.Game -> Day -> DB.Game
 dbGame game date = DB.Game (gameId game) (awayId game) (homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game) (periodFromPeriodTime $ periodTime game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
@@ -26,18 +41,12 @@ fetchGames date = do
         Just value -> return (convertGames (games value) (currentDate value))
         Nothing -> return []
 
-getGames :: Day -> Day -> IO [DB.Game]
-getGames begin end
-    | begin == end = fetchGames begin
-    | begin < end = do
-        x <- fetchGames begin
-        xs <- (getGames (addDays 1 begin) end)
-        return $ x ++ xs
-    | begin > end = do
-        x <- fetchGames end
-        xs <- (getGames begin (addDays 1 end))
-        return $ x ++ xs
-    | otherwise = return []
+getGames :: [Day] -> IO [DB.Game]
+getGames [] = return []
+getGames (x:xs) = do
+        h <- fetchGames x
+        t <- getGames xs
+        return $ h ++ t
 
 dbVideo :: DB.Game -> DB.Video
 dbVideo game = DB.Video (gameGameId game) (gameAwayId game) (gameHomeId game) "" "" "" ""

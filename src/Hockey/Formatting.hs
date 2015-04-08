@@ -1,4 +1,5 @@
 module Hockey.Formatting (
+    module Hockey.Types,
     module Data.Time.Calendar,
     module Data.Time.LocalTime,
     digitFormat,

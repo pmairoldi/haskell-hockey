@@ -15,7 +15,8 @@ module Hockey.Requests (
     -- getScoreboard,
     -- getBoxscore,
     -- getGameSummary,
-    getResults
+    getResults,
+    getGameDates
 ) where
 
 import Hockey.Network
@@ -23,6 +24,8 @@ import Hockey.Parsing
 import Hockey.Types
 import Hockey.Formatting
 import Data.Time.Calendar
+
+-- add type alias to make it easier to understand
 
 -- URLs
 
@@ -62,6 +65,7 @@ boxscoreHTMLUrl year season game = ("http://www.nhl.com/gamecenter/en/boxscore?i
 -- year is date year
 calendarUrl :: Integer -> Integer -> (String, ReturnType)
 calendarUrl year month = ("http://www.nhl.com/gamecenter/en/ajax/gamecalendarjson?year=" ++ (formattedYear year) ++ "&month=" ++ (formattedMonth month), JSON)
+
 -- HTTP Requests
 
 getResponse :: (String, ReturnType) -> IO String
@@ -95,3 +99,8 @@ getResults :: Day -> IO (Maybe Results)
 getResults date =
     let tripleDate = toGregorian date
     in decodeResponse $ getResponse $ resultsUrl (year tripleDate) (month tripleDate) (day tripleDate)
+
+getGameDates :: Day -> IO (Maybe GameDates)
+getGameDates date =
+    let tripleDate = toGregorian date
+    in decodeResponse $ getResponse $ calendarUrl (year tripleDate) (month tripleDate)

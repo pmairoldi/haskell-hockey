@@ -15,6 +15,9 @@ decodeResponse response = do
     rsp <- response
     return $ decode (stringToLazyByteString rsp)
 
+-- Season
+instance FromJSON Season
+
 -- GameState
 instance FromJSON GameState
 
@@ -47,3 +50,21 @@ parseResults v = Results <$>
     fmap unpackParseDate (v .: "currentDate") <*>
     fmap unpackParseDate (v .: "nextDate") <*>
     fmap unpackParseDate (v .: "prevDate")
+
+-- GameDate
+instance FromJSON GameDate where
+    parseJSON (Object v) = parseGameDate v
+    parseJSON _          = Applicative.empty
+
+parseGameDate v = GameDate <$>
+    fmap unpackParseDate (v .: "gd") <*>
+    fmap toSeason (v .: "gt") <*>
+    (v .: "n")
+
+-- GameDates
+instance FromJSON GameDates where
+    parseJSON (Object v) = parseGameDates v
+    parseJSON _          = Applicative.empty
+
+parseGameDates v = GameDates <$>
+    v .: "gameDates"
