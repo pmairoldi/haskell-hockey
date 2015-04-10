@@ -101,7 +101,6 @@ data EventGame = EventGame {
 } deriving (Show, Generic)
 
 data EventData = EventData {
-    refreshInterval :: Int,
     game :: EventGame
 } deriving (Show, Generic)
 

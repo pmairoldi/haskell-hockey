@@ -106,8 +106,8 @@ instance FromJSON EventGame where
 parseEventGame v = EventGame <$>
         v .: "awayteamid" <*>
         v .: "hometeamid" <*>
-        -- v .: "awayteamnick" <*>
-        -- v .: "hometeamnick" <*>
+        v .: "awayteamnick" <*>
+        v .: "hometeamnick" <*>
         v .: "plays"
 
 -- EventData
@@ -116,7 +116,6 @@ instance FromJSON EventData where
     parseJSON _          = Applicative.empty
 
 parseEventData v = EventData <$>
-        v .: "refreshInterval" <*>
         v .: "game"
 
 -- GameEvents
