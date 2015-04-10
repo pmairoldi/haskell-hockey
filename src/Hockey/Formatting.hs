@@ -32,7 +32,14 @@ module Hockey.Formatting (
     periodFromPeriodTime,
     valueToInteger,
     splitAndJoin,
-    joinStrings
+    joinStrings,
+    gameIdComponents,
+    yearFromGameId,
+    seasonFromGameId,
+    gameFromGameId,
+    teamIdFromName,
+    teams,
+    cmpTeam
 ) where
 
 import Hockey.Types
@@ -143,6 +150,7 @@ removeGameTime value
         | stringContainsAMPM value = ""
         | otherwise = List.map Char.toLower value
 
+-- make function take day instead
 year :: (Integer, Int, Int) -> Integer
 year (x,_,_) = x
 
@@ -175,10 +183,49 @@ valueToInteger (Just (Number n)) = fromInteger (coefficient n)
 valueToInteger _ = 0
 
 splitAndJoin :: String -> String
-splitAndJoin s = List.intercalate"," $ (Split.splitOn ", " s)
+splitAndJoin s = List.intercalate "," $ (Split.splitOn ", " s)
 
 joinStrings :: String -> String -> String
 joinStrings [] [] = ""
 joinStrings s1 [] = s1
 joinStrings [] s2 = s2
 joinStrings s1 s2 = s1 ++ "," ++ s2
+
+gameIdComponents :: Int -> (Integer, Season, Integer)
+gameIdComponents gameId =
+    let numbers = (show $ gameId)
+    in case List.length numbers of
+    10 -> (stringToInteger (List.take 4 numbers), toSeason (stringToInteger (List.take 2 (List.drop 4 numbers))), stringToInteger (List.take 4 (List.drop 6 numbers)))
+    otherwise -> (0, Preseason, 0)
+
+yearFromGameId :: Int -> Integer
+yearFromGameId g = case (gameIdComponents g) of
+    (x,_,_) -> x
+
+seasonFromGameId :: Int -> Season
+seasonFromGameId g = case (gameIdComponents g) of
+    (_,x,_) -> x
+
+gameFromGameId :: Int -> Integer
+gameFromGameId  g = case (gameIdComponents g) of
+    (_,_,x) -> x
+
+teams :: [(String, String, String)]
+teams = [("ana", "Anaheim", "Ducks"),("bos", "Boston", "Bruins"),("buf", "Buffalo", "Sabres"),("cgy", "Calgary", "Flames"),("car", "Carolina", "Hurricanes"),("chi", "Chicago", "Blackhawks"),("col", "Colorado", "Avalanche"),("cbj", "Columbus", "Blue Jackets"),("dal", "Dallas", "Stars"),("det", "Detroit", "Red Wings"),("edm", "Edmonton", "Oilers"),("fla", "Florida", "Panthers"),("lak", "Los Angeles", "Kings"),("min", "Minnesota", "Wild"),("mtl", "Montréal", "Canadiens"),("nsh", "Nashville", "Predators"),("njd", "New Jersey", "Devils"),("nyi", "New York", "Islanders"),("nyr", "New York", "Rangers"),("ott", "Ottawa", "Senators"),("phi", "Philadelphia", "Flyers"),("phx", "Phoenix", "Coyotes"),("pit", "Pittsburgh", "Penguins"),("sjs", "San Jose", "Sharks"),("stl", "St. Louis", "Blues"),("tbl", "Tampa Bay", "Lightning"),("tor", "Toronto", "Maple Leafs"),("van", "Vancouver", "Canucks"),("wsh", "Washington", "Capitals"),("wpg", "Winnipeg", "Jets"),("atl", "Atlanta", "Thrashers")]
+
+cmpTeam :: String -> (String, String, String) -> Bool
+cmpTeam x y = case y of
+    (a,b,c) -> (LazyText.toLower (LazyText.pack x)) == (LazyText.toLower (LazyText.pack a)) || (LazyText.toLower (LazyText.pack x)) == (LazyText.toLower (LazyText.pack b)) || (LazyText.toLower (LazyText.pack x)) == (LazyText.toLower (LazyText.pack c))
+
+teamFromName :: String -> Maybe (String, String, String)
+teamFromName name = case List.filter (\x -> cmpTeam name x) teams of
+    [x] -> Just x
+    otherwise -> Nothing
+
+idFromTeam :: (String, String, String) -> String
+idFromTeam (_,_,a) = a
+
+teamIdFromName :: String -> String
+teamIdFromName name = case teamFromName name of
+    Just x -> (idFromTeam x)
+    Nothing -> ""

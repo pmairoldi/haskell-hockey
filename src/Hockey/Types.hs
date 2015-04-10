@@ -9,10 +9,21 @@ module Hockey.Types (
     GameState(..),
     GameDate(..),
     GameDates(..),
+    EventType(..),
+    Event(..),
+    EventPlays(..),
+    EventGame(..),
+    EventData(..),
+    GameEvents(..),
+    Strength(..),
     fromGameState,
     toGameState,
     fromSeason,
     toSeason,
+    fromEventType,
+    toEventType,
+    fromStrength,
+    toStrength
 ) where
 
 import GHC.Generics
@@ -26,6 +37,12 @@ data Season = Preseason | Season | Playoffs deriving (Enum, Show, Read, Eq, Gene
 
 data GameState = None | Before | Ongoing | Overtime | Final deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "GameState"
+
+data Strength = Normal | Powerplay | Shorthand deriving (Enum, Show, Read, Eq, Generic)
+derivePersistField "Strength"
+
+data EventType = Unknown | Shot | Hit | Penalty | Goal | Fight deriving (Enum, Show, Read, Eq, Generic)
+derivePersistField "EventType"
 
 data Game = Game {
     gameId :: Int,
@@ -59,18 +76,38 @@ data GameDates = GameDates {
     dates :: [GameDate]
 } deriving (Show, Generic)
 
--- data Scoreboard = Scoreboard {
---     id :: Integer,
---     awayId :: String,
---     homeId :: String,
---     caTV :: String,
---     usTV :: String,
---     gameState :: GameState,
---     awayScore :: Integer,
---     homeScore :: Integer,
---     awaySOG :: Integer,
---     homeSOG :: Integer
--- } deriving (Show, Generic)
+-- convert strenth to type
+data Event = Event {
+    eventId :: Int,
+    teamId :: Int,
+    period :: Int,
+    time :: String,
+    description :: String,
+    formalId :: String,
+    strength :: Strength,
+    eventType :: EventType
+} deriving (Show, Generic)
+
+data EventPlays = EventPlays {
+    play :: [Event]
+} deriving (Show, Generic)
+
+data EventGame = EventGame {
+    awayTeamId :: Int,
+    homeTeamId :: Int,
+    awayName :: String,
+    homeName :: String,
+    plays :: EventPlays
+} deriving (Show, Generic)
+
+data EventData = EventData {
+    refreshInterval :: Int,
+    game :: EventGame
+} deriving (Show, Generic)
+
+data GameEvents = GameEvents {
+    eventData :: EventData
+} deriving (Show, Generic)
 
 -- Conversion Functions
 fromSeason :: Season -> Integer
@@ -96,3 +133,31 @@ toGameState 2 = Before
 toGameState 3 = Ongoing
 toGameState 4 = Overtime
 toGameState 5 = Final
+
+fromEventType :: EventType -> String
+fromEventType Shot = "shot"
+fromEventType Hit = "hit"
+fromEventType Penalty = "penalty"
+fromEventType Goal = "goal"
+fromEventType Fight = "fight"
+fromEventType Unknown = ""
+
+toEventType :: String -> EventType
+toEventType "shot" = Shot
+toEventType "hit" = Hit
+toEventType "penalty" = Penalty
+toEventType "goal" = Goal
+toEventType "fight" = Fight
+toEventType _ = Unknown
+
+-- check theese
+fromStrength :: Strength -> Int
+fromStrength Normal = 701
+fromStrength Powerplay = 702
+fromStrength Shorthand = 703
+
+toStrength :: Int -> Strength
+toStrength 701 = Normal
+toStrength 702 = Powerplay
+toStrength 703 = Shorthand
+toStrength _ = Normal

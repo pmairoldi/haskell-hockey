@@ -11,7 +11,8 @@
 module Hockey.Database.Types (
     migrate,
     Game(..),
-    Video(..)
+    Video(..),
+    Event(..)
 )
 
 where
@@ -20,7 +21,7 @@ import Database.Persist.Postgresql hiding (migrate)
 import Database.Persist.Sqlite hiding (migrate)
 import Database.Persist.TH
 import Hockey.Database.Internal
-import Hockey.Types (GameState(..))
+import Hockey.Types (GameState(..), EventType(..))
 import Data.Time.Calendar
 import Data.Time.LocalTime
 
@@ -53,6 +54,19 @@ Video
     awayCondense String
     homeCondense String
     UniqueVideoId gameId
+    deriving Show
+Event
+    eventId Int
+    gameId Int
+    teamId String
+    period Int
+    time String
+    eventType EventType
+    description String
+    videoLink String
+    formalId String
+    strength Int
+    UniqueEventId eventId gameId teamId period eventType
     deriving Show
 |]
 

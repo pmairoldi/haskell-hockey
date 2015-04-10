@@ -68,3 +68,61 @@ instance FromJSON GameDates where
 
 parseGameDates v = GameDates <$>
     v .: "gameDates"
+
+-- EventType
+instance FromJSON EventType
+
+-- Strength
+instance FromJSON Strength
+
+-- Event
+instance FromJSON Event where
+    parseJSON (Object v) = parseEvent v
+    parseJSON _          = Applicative.empty
+
+parseEvent v = Event <$>
+        v .: "eventid" <*>
+        v .: "teamid" <*>
+        v .: "period" <*>
+        v .: "time" <*>
+        v .: "desc" <*>
+        v .: "formalEventId" <*>
+        v .: "strength" <*>
+        v .: "type"
+
+-- EventPlays
+instance FromJSON EventPlays where
+    parseJSON (Object v) = parseEventPlays v
+    parseJSON _          = Applicative.empty
+
+parseEventPlays v = EventPlays <$>
+        v .: "play"
+
+-- EventGame
+instance FromJSON EventGame where
+    parseJSON (Object v) = parseEventGame v
+    parseJSON _          = Applicative.empty
+
+parseEventGame v = EventGame <$>
+        v .: "awayteamid" <*>
+        v .: "hometeamid" <*>
+        -- v .: "awayteamnick" <*>
+        -- v .: "hometeamnick" <*>
+        v .: "plays"
+
+-- EventData
+instance FromJSON EventData where
+    parseJSON (Object v) = parseEventData v
+    parseJSON _          = Applicative.empty
+
+parseEventData v = EventData <$>
+        v .: "refreshInterval" <*>
+        v .: "game"
+
+-- GameEvents
+instance FromJSON GameEvents where
+    parseJSON (Object v) = parseGameEvents v
+    parseJSON _          = Applicative.empty
+
+parseGameEvents v = GameEvents <$>
+        v .: "data"

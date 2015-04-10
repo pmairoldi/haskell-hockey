@@ -16,7 +16,8 @@ module Hockey.Requests (
     -- getBoxscore,
     -- getGameSummary,
     getResults,
-    getGameDates
+    getGameDates,
+    getGameEvents
 ) where
 
 import Hockey.Network
@@ -100,7 +101,8 @@ getResults date =
     let tripleDate = toGregorian date
     in decodeResponse $ getResponse $ resultsUrl (year tripleDate) (month tripleDate) (day tripleDate)
 
-getGameDates :: Day -> IO (Maybe GameDates)
-getGameDates date =
-    let tripleDate = toGregorian date
-    in decodeResponse $ getResponse $ calendarUrl (year tripleDate) (month tripleDate)
+getGameDates :: (Integer, Integer) -> IO (Maybe GameDates)
+getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
+
+getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)
+getGameEvents year season game = decodeResponse $ getResponse $ playByPlayUrl year season game
