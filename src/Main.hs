@@ -43,11 +43,11 @@ run db s y = do
     games <- getGames $ List.map date (filter (\x -> x `cmpSeason` s) dates)
     db `process` (upsertMany games)
 
-    events <- getEvents games
-    db `process` (upsertMany events)
-
-    videos <- getVideos games
-    db `process` (upsertMany videos)
+    -- events <- getEvents games
+    -- db `process` (upsertMany events)
+    --
+    -- videos <- getVideos games
+    -- db `process` (upsertMany videos)
 
 main :: IO ()
 main = do
