@@ -49,9 +49,9 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 
-executable hockey-background
+executable hockey-worker
   -- .hs or .lhs file containing the Main module.
-  main-is:             Background.hs
+  main-is:             Worker.hs
 
   -- Modules included in this executable, other than Main.
   -- other-modules:
@@ -68,7 +68,7 @@ executable hockey-background
   -- Base language which the package is written in.
   default-language:    Haskell2010
 
-executable hockey-rest
+executable hockey-web
     -- .hs or .lhs file containing the Main module.
     main-is:             Web.hs
 
