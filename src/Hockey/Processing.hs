@@ -2,7 +2,8 @@ module Hockey.Processing (
     module DB,
     getDates,
     getGames,
-    getVideos
+    getVideos,
+    getEvents
 )
 
 where
@@ -63,29 +64,28 @@ pickTeam teamId (awayId, awayName) (homeId, homeName)
     | teamId == homeId = teamIdFromName homeName
     | otherwise = ""
 
--- dbEvent :: Int -> T.Event -> (Int, String) -> (Int, String) -> DB.Event
--- dbEvent gameId event awayTeam homeTeam = DB.Event (eventId event) gameId (pickTeam (teamId event) awayTeam homeTeam) (period event) (time event) (eventType event) (description event) "" (formalId event) (fromStrength (strength event))
---
--- convertEvents :: Int -> [T.Event] -> (Int, String) -> (Int, String) -> [DB.Event]
--- convertEvents _ [] _ _ = []
--- convertEvents gameId (x:xs) awayTeam homeTeam = [(dbEvent gameId x awayTeam homeTeam)] ++ (convertEvents gameId xs awayTeam homeTeam)
---
--- convertGameEvents :: GameEvents -> EventGame
--- convertGameEvents e = game (eventData e)
---
--- fetchEvents :: DB.Game -> IO [DB.Event]
--- fetchEvents game = do
---     results <- let gameId = (gameGameId game)
---                in getGameEvents (yearFromGameId gameId) (seasonFromGameId gameId) (gameFromGameId gameId)
---     print results
---     case results of
---         Just value -> let e = (convertGameEvents value)
---                       in return $ convertEvents (gameGameId game) (play (plays e)) ((awayTeamId e), (awayName e)) ((homeTeamId e), (homeName e))
---         Nothing -> return []
---
--- getEvents :: [DB.Game] -> IO [DB.Event]
--- getEvents [] = return []
--- getEvents (x:xs) = do
---     h <- fetchEvents x
---     t <- getEvents xs
---     return $ h ++ t
+dbEvent :: Int -> T.Event -> (Int, String) -> (Int, String) -> DB.Event
+dbEvent gameId event awayTeam homeTeam = DB.Event (eventId event) gameId (pickTeam (teamId event) awayTeam homeTeam) (period event) (time event) (eventType event) (description event) "" (formalId event) (strength event)
+
+convertEvents :: Int -> [T.Event] -> (Int, String) -> (Int, String) -> [DB.Event]
+convertEvents _ [] _ _ = []
+convertEvents gameId (x:xs) awayTeam homeTeam = [(dbEvent gameId x awayTeam homeTeam)] ++ (convertEvents gameId xs awayTeam homeTeam)
+
+convertGameEvents :: GameEvents -> EventGame
+convertGameEvents e = game (eventData e)
+
+fetchEvents :: DB.Game -> IO [DB.Event]
+fetchEvents game = do
+    results <- let gameId = (gameGameId game)
+               in getGameEvents (yearFromGameId gameId) (seasonFromGameId gameId) (gameFromGameId gameId)
+    case results of
+        Just value -> let e = (convertGameEvents value)
+                      in return $ convertEvents (gameGameId game) (play (plays e)) ((awayTeamId e), (awayName e)) ((homeTeamId e), (homeName e))
+        Nothing -> return []
+
+getEvents :: [DB.Game] -> IO [DB.Event]
+getEvents [] = return []
+getEvents (x:xs) = do
+    h <- fetchEvents x
+    t <- getEvents xs
+    return $ h ++ t

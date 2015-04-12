@@ -1,60 +1,55 @@
 import Hockey.Database
 import Hockey.Processing
-import Hockey.Formatting
+import Hockey.Formatting hiding (season, year)
 import Data.List as List
 
-currentYear :: (Integer, Integer)
-currentYear = (2013, 2014)
+import LoadEnv
+import System.Environment (lookupEnv)
+import Data.Maybe
 
-currentSeason :: Season
-currentSeason = Playoffs
+data Environment = Environment {
+    dbHost :: String,
+    dbPort :: Int,
+    dbUser :: String,
+    dbPassword :: String,
+    year :: Year,
+    season :: Season,
+    logType :: LoggingType
+} deriving (Show)
 
-preseasonMonths :: (Integer, Integer) -> [(Integer, Integer)]
-preseasonMonths year = [((fst year), 9), ((fst year), 10)]
+env :: IO (Environment)
+env = do
+    loadEnv
 
-seasonMonths :: (Integer, Integer) -> [(Integer, Integer)]
-seasonMonths year = [((fst year), 10), ((fst year), 11), ((fst year), 12), ((snd year), 1), ((snd year), 2), ((snd year), 3), ((snd year), 4)]
+    host <- lookupEnv "DB_HOST"
+    port <- lookupEnv "DB_PORT"
+    user <- lookupEnv "DB_USER"
+    pass <- lookupEnv "DB_PASS"
+    year <- lookupEnv "YEAR"
+    seas <- lookupEnv "SEASON"
+    logs <- lookupEnv "LOG_TYPE"
 
-playoffMonths :: (Integer, Integer) -> [(Integer, Integer)]
-playoffMonths year = [((snd year), 4), ((snd year), 5), ((snd year), 6)]
+    return $ Environment (fromJust host) (stringToInt (fromJust port)) (fromJust user) (fromJust pass) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType)
 
-months :: Season -> (Integer, Integer) -> [(Integer, Integer)]
-months Preseason years= preseasonMonths years
-months Season years = seasonMonths years
-months Playoffs years = playoffMonths years
+database :: Environment -> Database
+database env = Database Postgres "hockey" (dbHost env) (dbPort env) (dbUser env) (dbPassword env) 10 (logType env)
 
-database :: Database
-database = (Database Postgres "pierremarcairoldi" "localhost" "pierremarcairoldi" "" 5432 10)
--- database = (Database SQLite "" "" "" "" 0 10)
-
-run :: Season -> (Integer, Integer) -> IO ()
-run s y = do
-    migrate database
+run :: Database -> Season -> Year -> IO ()
+run db s y = do
+    migrate db
 
     dates <- getDates (months s y)
 
-    games <- getGames $ List.map date (filter (\x -> (season x) == s) dates)
-    database `process` (upsertMany games)
+    games <- getGames $ List.map date (filter (\x -> x `cmpSeason` s) dates)
+    db `process` (upsertMany games)
+
+    events <- getEvents games
+    db `process` (upsertMany events)
 
     videos <- getVideos games
-    database `process` (upsertMany videos)
-
-cmpSeason :: GameDate -> Bool
-cmpSeason s = (season s) == currentSeason
+    db `process` (upsertMany videos)
 
 main :: IO ()
 main = do
-    -- run currentSeason currentYear
-
-    migrate database
-
-    -- dates <- getDates (months s y)
-
-    games <- getGames $ [dateFromComponents 2015 04 09]
-    database `process` (upsertMany games)
-
-    -- videos <- getVideos games
-    -- database `process` (upsertMany videos)
-    --
-    -- events <- getEvents games
-    -- database `process` (upsertMany events)
+    e <- env
+    run (database e) (season e) (year e)

@@ -16,6 +16,8 @@ module Hockey.Types (
     EventData(..),
     GameEvents(..),
     Strength(..),
+    Year(..),
+    Team(..),
     fromGameState,
     toGameState,
     fromSeason,
@@ -30,6 +32,14 @@ import GHC.Generics
 import Data.Time.Calendar
 import Data.Time.LocalTime
 import Database.Persist.TH
+
+type Year = (Integer, Integer)
+
+data Team = Team {
+    abr :: String,
+    city :: String,
+    name :: String
+} deriving (Show)
 
 data AMPM = AM | PM deriving (Enum, Show, Eq)
 

@@ -21,7 +21,7 @@ import Database.Persist.Postgresql hiding (migrate)
 import Database.Persist.Sqlite hiding (migrate)
 import Database.Persist.TH
 import Hockey.Database.Internal
-import Hockey.Types (GameState(..), EventType(..))
+import Hockey.Types (GameState(..), EventType(..), Strength(..))
 import Data.Time.Calendar
 import Data.Time.LocalTime
 
@@ -65,8 +65,8 @@ Event
     description String
     videoLink String
     formalId String
-    strength Int
-    UniqueEventId eventId gameId teamId period eventType
+    strength Strength
+    UniqueEventId eventId gameId
     deriving Show
 |]
 

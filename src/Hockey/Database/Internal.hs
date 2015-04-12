@@ -4,6 +4,7 @@
 module Hockey.Database.Internal (
     Database(..),
     DatabaseType(..),
+    LoggingType(..),
     process
 )
 
@@ -24,20 +25,20 @@ type Logger a b = a -> b
 type Connection m a b = Query m a -> b
 type Result a b = SqlPersistM a -> b
 
-data DatabaseType = Postgres | SQLite deriving (Enum, Show, Eq)
+data DatabaseType = Postgres | SQLite deriving (Enum, Show, Read, Eq)
+
+data LoggingType = None | Debug deriving (Enum, Show, Read, Eq)
 
 data Database = Database {
     dbType :: DatabaseType,
     name :: String,
     host :: String,
+    port :: Int,
     user :: String,
     password :: String,
-    port :: Int,
-    connections :: Int
+    connections :: Int,
+    logging :: LoggingType
 } deriving (Show)
-
-logger :: MonadIO m => LoggingT m a -> m a
-logger = runStderrLoggingT
 
 query :: (MonadIO m) => SqlPersistM a -> Query m a
 query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
@@ -65,4 +66,6 @@ connection database = case (dbType database) of
     SQLite -> sqlite database
 
 process :: (MonadBaseControl IO m, MonadIO m) => Database -> Result a (m a)
-process database queries = db logger (connection database) queries
+process database queries = case (logging database) of
+    None -> db runNoLoggingT (connection database) queries
+    Debug -> db runStderrLoggingT (connection database) queries

@@ -87,7 +87,7 @@ parseEvent v = Event <$>
         v .: "time" <*>
         v .: "desc" <*>
         v .: "formalEventId" <*>
-        v .: "strength" <*>
+        fmap toStrength (v .: "strength") <*>
         v .: "type"
 
 -- EventPlays

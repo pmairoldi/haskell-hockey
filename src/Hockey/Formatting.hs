@@ -1,5 +1,6 @@
 module Hockey.Formatting (
     module Hockey.Types,
+    module Hockey.Teams,
     module Data.Time.Calendar,
     module Data.Time.LocalTime,
     digitFormat,
@@ -14,6 +15,7 @@ module Hockey.Formatting (
     unpackToLower,
     dateFromComponents,
     stringToInteger,
+    stringToInt,
     dateStringToComponents,
     unpackParseDate,
     stringToLazyByteString,
@@ -38,8 +40,11 @@ module Hockey.Formatting (
     seasonFromGameId,
     gameFromGameId,
     teamIdFromName,
-    teams,
-    cmpTeam
+    cmpTeam,
+    months,
+    stringToLower,
+    seasonYears,
+    cmpSeason
 ) where
 
 import Hockey.Types
@@ -55,6 +60,7 @@ import qualified Data.ByteString.Char8 as ByteString
 import Data.Char as Char
 import Data.Aeson
 import Data.Scientific
+import Hockey.Teams
 
 digitFormat :: Int -> Integer -> String
 digitFormat digits number = LazyText.unpack (format (left digits '0') number)
@@ -85,6 +91,9 @@ fullDate year month day = (formattedYear year) ++ "-" ++ (formattedMonth month) 
 
 unpackToLower :: Text -> String
 unpackToLower v = LazyText.unpack (LazyText.toLower v)
+
+stringToLower :: String -> String
+stringToLower v = unpackToLower (LazyText.pack v)
 
 -- return 0000-00-00 if not good
 dateFromComponents :: Integer -> Int -> Int -> Day
@@ -177,7 +186,7 @@ periodFromPeriodTime t
     | "so" `List.isSuffixOf` t = 5
     | otherwise = 0
 
-    -- Stupid NHL returning "" in their json when it is a number
+-- Stupid NHL returning "" in their json when it is a number
 valueToInteger :: Maybe Value -> Int
 valueToInteger (Just (Number n)) = fromInteger (coefficient n)
 valueToInteger _ = 0
@@ -210,22 +219,35 @@ gameFromGameId :: Int -> Integer
 gameFromGameId  g = case (gameIdComponents g) of
     (_,_,x) -> x
 
-teams :: [(String, String, String)]
-teams = [("ana", "Anaheim", "Ducks"),("bos", "Boston", "Bruins"),("buf", "Buffalo", "Sabres"),("cgy", "Calgary", "Flames"),("car", "Carolina", "Hurricanes"),("chi", "Chicago", "Blackhawks"),("col", "Colorado", "Avalanche"),("cbj", "Columbus", "Blue Jackets"),("dal", "Dallas", "Stars"),("det", "Detroit", "Red Wings"),("edm", "Edmonton", "Oilers"),("fla", "Florida", "Panthers"),("lak", "Los Angeles", "Kings"),("min", "Minnesota", "Wild"),("mtl", "Montréal", "Canadiens"),("nsh", "Nashville", "Predators"),("njd", "New Jersey", "Devils"),("nyi", "New York", "Islanders"),("nyr", "New York", "Rangers"),("ott", "Ottawa", "Senators"),("phi", "Philadelphia", "Flyers"),("phx", "Phoenix", "Coyotes"),("pit", "Pittsburgh", "Penguins"),("sjs", "San Jose", "Sharks"),("stl", "St. Louis", "Blues"),("tbl", "Tampa Bay", "Lightning"),("tor", "Toronto", "Maple Leafs"),("van", "Vancouver", "Canucks"),("wsh", "Washington", "Capitals"),("wpg", "Winnipeg", "Jets"),("atl", "Atlanta", "Thrashers")]
-
-cmpTeam :: String -> (String, String, String) -> Bool
+cmpTeam :: String -> Team -> Bool
 cmpTeam x y = case y of
-    (a,b,c) -> (LazyText.toLower (LazyText.pack x)) == (LazyText.toLower (LazyText.pack a)) || (LazyText.toLower (LazyText.pack x)) == (LazyText.toLower (LazyText.pack b)) || (LazyText.toLower (LazyText.pack x)) == (LazyText.toLower (LazyText.pack c))
+    t -> (stringToLower x) == (stringToLower (abr t)) || (stringToLower x) == (stringToLower (city t)) || (stringToLower x) == (stringToLower (name t))
 
-teamFromName :: String -> Maybe (String, String, String)
+teamFromName :: String -> Maybe Team
 teamFromName name = case List.filter (\x -> cmpTeam name x) teams of
     [x] -> Just x
     otherwise -> Nothing
 
-idFromTeam :: (String, String, String) -> String
-idFromTeam (_,_,a) = a
-
 teamIdFromName :: String -> String
 teamIdFromName name = case teamFromName name of
-    Just x -> (idFromTeam x)
+    Just x -> (abr x)
     Nothing -> ""
+
+preseasonMonths :: Year -> [Year]
+preseasonMonths year = [((fst year), 9), ((fst year), 10)]
+
+seasonMonths :: Year -> [Year]
+seasonMonths year = [((fst year), 10), ((fst year), 11), ((fst year), 12), ((snd year), 1), ((snd year), 2), ((snd year), 3), ((snd year), 4)]
+
+playoffMonths :: Year -> [Year]
+playoffMonths year = [((snd year), 4), ((snd year), 5), ((snd year), 6)]
+
+months :: Season -> Year -> [Year]
+months Preseason years= preseasonMonths years
+months Season years = seasonMonths years
+months Playoffs years = playoffMonths years
+
+seasonYears :: Integer -> Year
+seasonYears year = (year, year + 1)
+
+cmpSeason x s = (season x) == s
