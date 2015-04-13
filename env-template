@@ -2,6 +2,7 @@ YEAR=2013
 SEASON=Playoffs
 LOG_TYPE=None
 DB_TYPE=Postgres
+DB_NAME=hockey
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=user

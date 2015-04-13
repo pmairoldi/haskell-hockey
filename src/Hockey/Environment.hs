@@ -14,6 +14,7 @@ import Data.Maybe
 
 data Environment = Environment {
     dbType :: DatabaseType,
+    dbName :: String,
     dbHost :: String,
     dbPort :: Int,
     dbUser :: String,
@@ -29,6 +30,7 @@ env = do
     loadEnv
 
     t <- lookupEnv "DB_TYPE"
+    name <- lookupEnv "DB_NAME"
     host <- lookupEnv "DB_HOST"
     port <- lookupEnv "DB_PORT"
     user <- lookupEnv "DB_USER"
@@ -38,7 +40,7 @@ env = do
     seas <- lookupEnv "SEASON"
     logs <- lookupEnv "LOG_TYPE"
 
-    return $ Environment (read (fromJust t) :: DatabaseType) (fromJust host) (stringToInt (fromJust port)) (fromJust user) (fromJust pass) (stringToInt (fromJust conn)) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType)
+    return $ Environment (read (fromJust t) :: DatabaseType) (fromJust name) (fromJust host) (stringToInt (fromJust port)) (fromJust user) (fromJust pass) (stringToInt (fromJust conn)) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType)
 
 database :: Environment -> Database
-database env = Database (dbType env) "hockey" (dbHost env) (dbPort env) (dbUser env) (dbPassword env) (dbConnections env) (logType env)
+database env = Database (dbType env) (dbName env) (dbHost env) (dbPort env) (dbUser env) (dbPassword env) (dbConnections env) (logType env)
