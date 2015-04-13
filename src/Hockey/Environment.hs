@@ -9,7 +9,7 @@ where
 import Hockey.Database hiding (dbType)
 import Hockey.Formatting
 import LoadEnv
-import System.Environment (lookupEnv)
+import System.Environment
 import Data.Maybe
 
 data Environment = Environment {
@@ -27,6 +27,9 @@ data Environment = Environment {
 env :: IO (Environment)
 env = do
     loadEnv
+
+    e <- getEnvironment
+    print e
 
     t <- lookupEnv "DB_TYPE"
     host <- lookupEnv "DB_HOST"
