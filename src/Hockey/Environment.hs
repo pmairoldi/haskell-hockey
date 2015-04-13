@@ -28,9 +28,6 @@ env :: IO (Environment)
 env = do
     loadEnv
 
-    e <- getEnvironment
-    print e
-
     t <- lookupEnv "DB_TYPE"
     host <- lookupEnv "DB_HOST"
     port <- lookupEnv "DB_PORT"
