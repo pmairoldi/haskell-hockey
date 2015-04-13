@@ -81,14 +81,14 @@ instance FromJSON Event where
     parseJSON _          = Applicative.empty
 
 parseEvent v = Event <$>
-        v .: "eventid" <*>
-        v .: "teamid" <*>
-        v .: "period" <*>
-        v .: "time" <*>
-        v .: "desc" <*>
-        v .: "formalEventId" <*>
-        fmap toStrength (v .: "strength") <*>
-        v .: "type"
+    v .: "eventid" <*>
+    v .: "teamid" <*>
+    v .: "period" <*>
+    v .: "time" <*>
+    v .: "desc" <*>
+    v .: "formalEventId" <*>
+    fmap toStrength (v .: "strength") <*>
+    v .: "type"
 
 -- EventPlays
 instance FromJSON EventPlays where
@@ -104,11 +104,11 @@ instance FromJSON EventGame where
     parseJSON _          = Applicative.empty
 
 parseEventGame v = EventGame <$>
-        v .: "awayteamid" <*>
-        v .: "hometeamid" <*>
-        v .: "awayteamnick" <*>
-        v .: "hometeamnick" <*>
-        v .: "plays"
+    v .: "awayteamid" <*>
+    v .: "hometeamid" <*>
+    v .: "awayteamnick" <*>
+    v .: "hometeamnick" <*>
+    v .: "plays"
 
 -- EventData
 instance FromJSON EventData where
@@ -116,7 +116,7 @@ instance FromJSON EventData where
     parseJSON _          = Applicative.empty
 
 parseEventData v = EventData <$>
-        v .: "game"
+    v .: "game"
 
 -- GameEvents
 instance FromJSON GameEvents where
@@ -124,4 +124,29 @@ instance FromJSON GameEvents where
     parseJSON _          = Applicative.empty
 
 parseGameEvents v = GameEvents <$>
-        v .: "data"
+    v .: "data"
+
+-- PeriodData
+instance FromJSON PeriodData where
+    parseJSON (Object v) = parsePeriodData v
+    parseJSON _          = Applicative.empty
+
+parsePeriodData v = PeriodData <$>
+        v .: "g" <*>
+        v .: "s"
+
+instance FromJSON ScoreboardData where
+    parseJSON (Object v) = parseScoreboardData v
+    parseJSON _          = Applicative.empty
+
+parseScoreboardData v = ScoreboardData <$>
+        fmap unpackToLower (v .: "ab") <*>
+        v .: "pa"
+
+instance FromJSON Scoreboard where
+    parseJSON (Object v) = parseScoreboard v
+    parseJSON _          = Applicative.empty
+
+parseScoreboard v = Scoreboard <$>
+    v .: "h" <*>
+    v .: "a"

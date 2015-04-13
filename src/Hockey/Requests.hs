@@ -9,15 +9,10 @@ module Hockey.Requests (
     boxscoreHTMLUrl,
     calendarUrl,
     getResponse,
-    -- getPlayByPlay,
-    -- getSummary,
-    -- getEventVideos,
-    -- getScoreboard,
-    -- getBoxscore,
-    -- getGameSummary,
     getResults,
     getGameDates,
-    getGameEvents
+    getGameEvents,
+    getGamePeriods
 ) where
 
 import Hockey.Network
@@ -68,34 +63,10 @@ calendarUrl :: Integer -> Integer -> (String, ReturnType)
 calendarUrl year month = ("http://www.nhl.com/gamecenter/en/ajax/gamecalendarjson?year=" ++ (formattedYear year) ++ "&month=" ++ (formattedMonth month), JSON)
 
 -- HTTP Requests
-
 getResponse :: (String, ReturnType) -> IO String
 getResponse tuple = get (fst tuple) (snd tuple)
 
 -- Parsed Responses
-
--- Start add concrete types
-
--- getPlayByPlay :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getPlayByPlay year season game = decodeResponse $ getResponse $ playByPlayUrl year season game
---
--- getSummary :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getSummary year season game = decodeResponse $ getResponse $ summaryUrl year season game
---
--- getEventVideos :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getEventVideos year season game = decodeResponse $ getResponse $ eventVideoUrl year season game
---
--- getScoreboard :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getScoreboard year season game = decodeResponse $ getResponse $ scoreboardUrl year season game
---
--- getBoxscore :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getBoxscore year season game = decodeResponse $ getResponse $ boxscoreUrl year season game
---
--- getGameSummary :: (FromJSON a) => Integer -> Season -> Integer -> IO (Maybe a)
--- getGameSummary year season game = decodeResponse $ getResponse $ gameSummaryUrl year season game
-
--- End add concrete types
-
 getResults :: Day -> IO (Maybe Results)
 getResults date =
     let tripleDate = toGregorian date
@@ -106,3 +77,6 @@ getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
 
 getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)
 getGameEvents year season game = decodeResponse $ getResponse $ playByPlayUrl year season game
+
+getGamePeriods :: Integer -> Season -> Integer -> IO (Maybe Scoreboard)
+getGamePeriods year season game = decodeResponse $ getResponse $ scoreboardUrl year season game

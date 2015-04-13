@@ -18,6 +18,9 @@ module Hockey.Types (
     Strength(..),
     Year(..),
     Team(..),
+    PeriodData(..),
+    ScoreboardData(..),
+    Scoreboard(..),
     fromGameState,
     toGameState,
     fromSeason,
@@ -116,6 +119,21 @@ data EventData = EventData {
 
 data GameEvents = GameEvents {
     eventData :: EventData
+} deriving (Show, Generic)
+
+data PeriodData = PeriodData {
+    goals :: Int,
+    shots :: Int
+} deriving (Show, Generic)
+
+data ScoreboardData = ScoreboardData {
+    periodTeamId :: String,
+    periods :: [PeriodData]
+} deriving (Show, Generic)
+
+data Scoreboard = Scoreboard {
+    home :: ScoreboardData,
+    away :: ScoreboardData
 } deriving (Show, Generic)
 
 -- Conversion Functions

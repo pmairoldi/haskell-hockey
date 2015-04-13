@@ -12,7 +12,11 @@ module Hockey.Database.Types (
     migrate,
     Game(..),
     Video(..),
-    Event(..)
+    Event(..),
+    Team(..),
+    PlayoffSeed(..),
+    Period(..),
+    selectGames
 )
 
 where
@@ -24,6 +28,9 @@ import Hockey.Database.Internal
 import Hockey.Types (GameState(..), EventType(..), Strength(..))
 import Data.Time.Calendar
 import Data.Time.LocalTime
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Control
+import Data.List as List
 
 --add Maybe monad to some type
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -44,6 +51,14 @@ Game
     awayStatus String
     homeStatus String
     UniqueGameId gameId
+    deriving Show
+Period
+    gameId Int
+    teamId String
+    period Int
+    shots Int
+    goals Int
+    UniquePeriodId gameId teamId period
     deriving Show
 Video
     gameId Int
@@ -68,6 +83,27 @@ Event
     strength Strength
     UniqueEventId eventId gameId
     deriving Show
+Team
+    teamId String
+    city String
+    name String
+    UniqueTeamId teamId
+    deriving Show
+PlayoffSeed
+    year Int
+    conference String
+    round Int
+    seed Int
+    homeId String
+    awayId String
+    UniquePlayoffSeedId year conference round seed
+    deriving Show
 |]
 
+migrate :: (MonadBaseControl IO m, MonadIO m) => Database -> m ()
 migrate database = database `process` (runMigration migrateAll)
+
+selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> [Day] -> m [Game]
+selectGames database dates = do
+    games <- database `process` (selectList [GameDate <-. dates] [])
+    return $ List.map entityVal games

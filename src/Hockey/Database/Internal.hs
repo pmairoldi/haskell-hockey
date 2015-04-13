@@ -43,7 +43,7 @@ data Database = Database {
 query :: (MonadIO m) => SqlPersistM a -> Query m a
 query stmt = \pool -> liftIO $ runSqlPersistMPool stmt pool
 
-db :: MonadIO m => Logger b c -> Connection m a b -> Result a c
+db :: (MonadIO m) => Logger b c -> Connection m a b -> Result a c
 db logger connection stmt = logger $ connection $ query stmt
 
 postgresConnection :: Database -> ConnectionString

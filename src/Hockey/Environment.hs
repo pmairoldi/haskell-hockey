@@ -6,13 +6,14 @@ module Hockey.Environment (
 
 where
 
-import Hockey.Database
+import Hockey.Database hiding (dbType)
 import Hockey.Formatting
 import LoadEnv
 import System.Environment (lookupEnv)
 import Data.Maybe
 
 data Environment = Environment {
+    dbType :: DatabaseType,
     dbHost :: String,
     dbPort :: Int,
     dbUser :: String,
@@ -27,6 +28,7 @@ env :: IO (Environment)
 env = do
     loadEnv
 
+    t <- lookupEnv "DB_TYPE"
     host <- lookupEnv "DB_HOST"
     port <- lookupEnv "DB_PORT"
     user <- lookupEnv "DB_USER"
@@ -36,7 +38,7 @@ env = do
     seas <- lookupEnv "SEASON"
     logs <- lookupEnv "LOG_TYPE"
 
-    return $ Environment (fromJust host) (stringToInt (fromJust port)) (fromJust user) (fromJust pass) (stringToInt (fromJust conn)) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType)
+    return $ Environment (read (fromJust t) :: DatabaseType) (fromJust host) (stringToInt (fromJust port)) (fromJust user) (fromJust pass) (stringToInt (fromJust conn)) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType)
 
 database :: Environment -> Database
-database env = Database Postgres "hockey" (dbHost env) (dbPort env) (dbUser env) (dbPassword env) (dbConnections env) (logType env)
+database env = Database (dbType env) "hockey" (dbHost env) (dbPort env) (dbUser env) (dbPassword env) (dbConnections env) (logType env)

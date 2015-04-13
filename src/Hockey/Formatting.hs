@@ -250,4 +250,5 @@ months Playoffs years = playoffMonths years
 seasonYears :: Integer -> Year
 seasonYears year = (year, year + 1)
 
+cmpSeason :: GameDate -> Season -> Bool
 cmpSeason x s = (season x) == s

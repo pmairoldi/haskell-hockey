@@ -1,9 +1,12 @@
 module Hockey.Processing (
     module DB,
     getDates,
-    getGames,
-    getVideos,
-    getEvents
+    processTeams,
+    processGames,
+    processEvents,
+    processVideos,
+    processSeeds,
+    processPeriods
 )
 
 where
@@ -13,6 +16,13 @@ import Hockey.Types as T
 import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
+import Hockey.Playoffs as P
+
+dbTeam :: T.Team -> DB.Team
+dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
+
+getTeams :: [T.Team] -> [DB.Team]
+getTeams teams = List.map dbTeam teams
 
 fetchDates :: (Integer, Integer) -> IO [T.GameDate]
 fetchDates date = do
@@ -29,7 +39,7 @@ getDates (x:xs) = do
         return $ h ++ t
 
 dbGame :: T.Game -> Day -> DB.Game
-dbGame game date = DB.Game (gameId game) (awayId game) (homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game) (periodFromPeriodTime $ periodTime game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
+dbGame game date = DB.Game (gameId game) (T.awayId game) (T.homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game) (periodFromPeriodTime $ periodTime game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
 
 convertGames :: [T.Game] -> Day -> [DB.Game]
 convertGames [] _ = []
@@ -49,6 +59,7 @@ getGames (x:xs) = do
         t <- getGames xs
         return $ h ++ t
 
+-- fix getting videos
 dbVideo :: DB.Game -> DB.Video
 dbVideo game = DB.Video (gameGameId game) (gameAwayId game) (gameHomeId game) "" "" "" ""
 
@@ -89,3 +100,68 @@ getEvents (x:xs) = do
     h <- fetchEvents x
     t <- getEvents xs
     return $ h ++ t
+
+dbSeed :: Seed -> DB.PlayoffSeed
+dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed)
+
+getSeeds :: [Seed] -> [DB.PlayoffSeed]
+getSeeds seeds = List.map dbSeed seeds
+
+dbPeriod :: Int -> String -> Int -> PeriodData -> DB.Period
+dbPeriod gameId team period periodData = DB.Period gameId team period (shots periodData) (goals periodData)
+
+convertPeriods :: Int -> String -> Int -> [PeriodData] -> [DB.Period]
+convertPeriods gameId team period [] = []
+convertPeriods gameId team period (x:xs) = [(dbPeriod gameId team period x)] ++ (convertPeriods gameId team (period + 1) xs)
+
+fetchPeriods :: DB.Game -> IO [DB.Period]
+fetchPeriods game = do
+    results <- let gameId = (gameGameId game)
+               in getGamePeriods (yearFromGameId gameId) (seasonFromGameId gameId) (gameFromGameId gameId)
+    case results of
+        Just value -> let h = (home value)
+                          a = (away value)
+                      in return $ (convertPeriods (gameGameId game) (T.periodTeamId h) 1 (periods h)) ++ (convertPeriods (gameGameId game) (T.periodTeamId a) 1 (periods a))
+        Nothing -> return []
+
+getPeriods :: [DB.Game] -> IO [DB.Period]
+getPeriods [] = return []
+getPeriods (x:xs) = do
+    h <- fetchPeriods x
+    t <- getPeriods xs
+    return $ h ++ t
+
+-- exposed functions
+processTeams :: Database -> [T.Team] -> IO ()
+processTeams db teams = db `process` (upsertMany (getTeams teams))
+
+processSeeds :: Database -> [Seed] -> IO ()
+processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
+
+processGames :: Database -> [Day] -> IO ()
+processGames db [] = return ()
+processGames db (x:xs) = do
+    values <- getGames [x]
+    db `process` (upsertMany values)
+    processGames db xs
+
+processPeriods :: Database -> [DB.Game] -> IO ()
+processPeriods db [] = return ()
+processPeriods db (x:xs) = do
+    values <- getPeriods [x]
+    db `process` (upsertMany values)
+    processPeriods db xs
+
+processEvents :: Database -> [DB.Game] -> IO ()
+processEvents db [] = return ()
+processEvents db (x:xs) = do
+    values <- getEvents [x]
+    db `process` (upsertMany values)
+    processEvents db xs
+
+processVideos :: Database -> [DB.Game] -> IO ()
+processVideos db [] = return ()
+processVideos db (x:xs) = do
+    values <- getVideos [x]
+    db `process` (upsertMany values)
+    processVideos db xs

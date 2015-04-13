@@ -3,7 +3,9 @@
 module Hockey.Database (
     module Hockey.Database.Types,
     module Hockey.Database.Internal,
-    upsertMany
+    module Database.Persist,
+    upsertMany,
+    insertManyUnique
 )
 
 where
@@ -19,3 +21,9 @@ upsertMany [] = return ()
 upsertMany (x:xs) = do
     upsert x []
     upsertMany xs
+
+insertManyUnique :: (MonadIO m, PersistEntity val, PersistUnique (PersistEntityBackend val)) => [val] -> ReaderT (PersistEntityBackend val) m ()
+insertManyUnique [] = return ()
+insertManyUnique (x:xs) = do
+    insertUnique x
+    insertManyUnique xs
