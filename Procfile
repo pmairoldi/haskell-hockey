@@ -1,1 +1,1 @@
-worker: bin/hockey-worker
+worker: ./worker.sh
