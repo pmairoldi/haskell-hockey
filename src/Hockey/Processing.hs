@@ -139,29 +139,21 @@ processSeeds :: Database -> [Seed] -> IO ()
 processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 
 processGames :: Database -> [Day] -> IO ()
--- processGames db [] = return ()
 processGames db xs = do
     values <- getGames xs
     db `process` (upsertMany values)
-    -- processGames db xs
 
 processPeriods :: Database -> [DB.Game] -> IO ()
--- processPeriods db [] = return ()
 processPeriods db xs = do
     values <- getPeriods xs
     db `process` (upsertMany values)
-    -- processPeriods db xs
 
 processEvents :: Database -> [DB.Game] -> IO ()
--- processEvents db [] = return ()
 processEvents db xs = do
     values <- getEvents xs
     db `process` (upsertMany values)
-    -- processEvents db xs
 
 processVideos :: Database -> [DB.Game] -> IO ()
--- processVideos db [] = return ()
 processVideos db xs = do
     values <- getVideos xs
     db `process` (upsertMany values)
-    -- processVideos db xs

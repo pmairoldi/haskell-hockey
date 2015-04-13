@@ -4,7 +4,7 @@ import Hockey.Environment
 import Hockey.Playoffs hiding (year)
 import System.Environment (getArgs)
 import Data.List as List
-import Data.Time
+import Data.Time hiding (months)
 
 currentDay :: IO Day
 currentDay = do
@@ -56,9 +56,6 @@ main = do
     e <- env
     args <- getArgs
     day <- currentDay
-
-    --tesitng only
-    let day = dateFromComponents 2014 4 20
 
     let db = (database e)
     let s = (season e)
