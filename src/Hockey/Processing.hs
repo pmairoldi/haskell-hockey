@@ -39,7 +39,7 @@ getDates (x:xs) = do
         return $ h ++ t
 
 dbGame :: T.Game -> Day -> DB.Game
-dbGame game date = DB.Game (gameId game) (T.awayId game) (T.homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game) (periodFromPeriodTime $ periodTime game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
+dbGame game date = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game) (periodFromPeriodTime $ periodTime game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
 
 convertGames :: [T.Game] -> Day -> [DB.Game]
 convertGames [] _ = []
@@ -61,7 +61,7 @@ getGames (x:xs) = do
 
 -- fix getting videos
 dbVideo :: DB.Game -> DB.Video
-dbVideo game = DB.Video (gameGameId game) (gameAwayId game) (gameHomeId game) "" "" "" ""
+dbVideo game = DB.Video (yearFromGameId (gameGameId game)) (seasonFromGameId (gameGameId game)) (gameGameId game) (gameAwayId game) (gameHomeId game) "" "" "" ""
 
 fetchVideos :: DB.Game -> DB.Video
 fetchVideos game = dbVideo game
@@ -76,7 +76,7 @@ pickTeam teamId (awayId, awayName) (homeId, homeName)
     | otherwise = ""
 
 dbEvent :: Int -> T.Event -> (Int, String) -> (Int, String) -> DB.Event
-dbEvent gameId event awayTeam homeTeam = DB.Event (eventId event) gameId (pickTeam (teamId event) awayTeam homeTeam) (period event) (time event) (eventType event) (description event) "" (formalId event) (strength event)
+dbEvent gameId event awayTeam homeTeam = DB.Event (eventId event) (yearFromGameId gameId) (seasonFromGameId gameId) gameId (pickTeam (teamId event) awayTeam homeTeam) (period event) (time event) (eventType event) (description event) "" (formalId event) (strength event)
 
 convertEvents :: Int -> [T.Event] -> (Int, String) -> (Int, String) -> [DB.Event]
 convertEvents _ [] _ _ = []
@@ -88,7 +88,7 @@ convertGameEvents e = game (eventData e)
 fetchEvents :: DB.Game -> IO [DB.Event]
 fetchEvents game = do
     results <- let gameId = (gameGameId game)
-               in getGameEvents (yearFromGameId gameId) (seasonFromGameId gameId) (gameFromGameId gameId)
+               in getGameEvents (intToInteger (yearFromGameId gameId)) (seasonFromGameId gameId) (intToInteger (gameFromGameId gameId))
     case results of
         Just value -> let e = (convertGameEvents value)
                       in return $ convertEvents (gameGameId game) (play (plays e)) ((awayTeamId e), (awayName e)) ((homeTeamId e), (homeName e))
@@ -102,13 +102,13 @@ getEvents (x:xs) = do
     return $ h ++ t
 
 dbSeed :: Seed -> DB.PlayoffSeed
-dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed)
+dbSeed seed = DB.PlayoffSeed (P.year seed) Playoffs (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed)
 
 getSeeds :: [Seed] -> [DB.PlayoffSeed]
 getSeeds seeds = List.map dbSeed seeds
 
 dbPeriod :: Int -> String -> Int -> PeriodData -> DB.Period
-dbPeriod gameId team period periodData = DB.Period gameId team period (shots periodData) (goals periodData)
+dbPeriod gameId team period periodData = DB.Period  (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (shots periodData) (goals periodData)
 
 convertPeriods :: Int -> String -> Int -> [PeriodData] -> [DB.Period]
 convertPeriods gameId team period [] = []
@@ -117,7 +117,7 @@ convertPeriods gameId team period (x:xs) = [(dbPeriod gameId team period x)] ++ 
 fetchPeriods :: DB.Game -> IO [DB.Period]
 fetchPeriods game = do
     results <- let gameId = (gameGameId game)
-               in getGamePeriods (yearFromGameId gameId) (seasonFromGameId gameId) (gameFromGameId gameId)
+               in getGamePeriods (intToInteger (yearFromGameId gameId)) (seasonFromGameId gameId) (intToInteger (gameFromGameId gameId))
     case results of
         Just value -> let h = (home value)
                           a = (away value)

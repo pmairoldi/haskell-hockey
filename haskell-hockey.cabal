@@ -79,8 +79,7 @@ executable hockey-web
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:       base, HTTP, formatting, text, transformers, aeson, bytestring, time, split, scientific, persistent, persistent-template, persistent-sqlite, persistent-postgresql, monad-logger, monad-control, load-env
-
+    build-depends:       base, HTTP, formatting, text, transformers, aeson, bytestring, time, split, scientific, persistent, persistent-template, persistent-sqlite, persistent-postgresql, monad-logger, monad-control, load-env, yesod
     -- Directories containing source files.
     hs-source-dirs:      src
 

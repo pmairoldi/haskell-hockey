@@ -47,6 +47,7 @@ data Team = Team {
 data AMPM = AM | PM deriving (Enum, Show, Eq)
 
 data Season = Preseason | Season | Playoffs deriving (Enum, Show, Read, Eq, Generic)
+derivePersistField "Season"
 
 data GameState = None | Before | Ongoing | Overtime | Final deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "GameState"

@@ -44,7 +44,9 @@ module Hockey.Formatting (
     months,
     stringToLower,
     seasonYears,
-    cmpSeason
+    cmpSeason,
+    integerToInt,
+    intToInteger
 ) where
 
 import Hockey.Types
@@ -106,6 +108,12 @@ stringToInteger s = read s :: Integer
 stringToInt :: String -> Int
 stringToInt [] = 0
 stringToInt s = read s :: Int
+
+integerToInt :: Integer -> Int
+integerToInt i = read (show i) :: Int
+
+intToInteger :: Int -> Integer
+intToInteger i = read (show i) :: Integer
 
 dateStringToComponents :: Text -> [Int]
 dateStringToComponents text = List.map stringToInt $ Split.splitOn "/" $ LazyText.unpack text
@@ -200,14 +208,14 @@ joinStrings s1 [] = s1
 joinStrings [] s2 = s2
 joinStrings s1 s2 = s1 ++ "," ++ s2
 
-gameIdComponents :: Int -> (Integer, Season, Integer)
+gameIdComponents :: Int -> (Int, Season, Int)
 gameIdComponents gameId =
     let numbers = (show $ gameId)
     in case List.length numbers of
-    10 -> (stringToInteger (List.take 4 numbers), toSeason (stringToInteger (List.take 2 (List.drop 4 numbers))), stringToInteger (List.take 4 (List.drop 6 numbers)))
+    10 -> (stringToInt (List.take 4 numbers), toSeason (stringToInteger (List.take 2 (List.drop 4 numbers))), stringToInt (List.take 4 (List.drop 6 numbers)))
     otherwise -> (0, Preseason, 0)
 
-yearFromGameId :: Int -> Integer
+yearFromGameId :: Int -> Int
 yearFromGameId g = case (gameIdComponents g) of
     (x,_,_) -> x
 
@@ -215,7 +223,7 @@ seasonFromGameId :: Int -> Season
 seasonFromGameId g = case (gameIdComponents g) of
     (_,x,_) -> x
 
-gameFromGameId :: Int -> Integer
+gameFromGameId :: Int -> Int
 gameFromGameId  g = case (gameIdComponents g) of
     (_,_,x) -> x
 

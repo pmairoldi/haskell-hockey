@@ -7,6 +7,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Hockey.Database.Types (
     migrate,
@@ -16,7 +17,11 @@ module Hockey.Database.Types (
     Team(..),
     PlayoffSeed(..),
     Period(..),
-    selectGames
+    selectGames,
+    selectPeriods,
+    selectSeeds,
+    selectGamesForSeason,
+    selectEvents
 )
 
 where
@@ -25,16 +30,20 @@ import Database.Persist.Postgresql hiding (migrate)
 import Database.Persist.Sqlite hiding (migrate)
 import Database.Persist.TH
 import Hockey.Database.Internal
-import Hockey.Types (GameState(..), EventType(..), Strength(..))
+import Hockey.Types (GameState(..), EventType(..), Strength(..), Season(..), Year(..))
+import Hockey.Formatting (integerToInt)
 import Data.Time.Calendar
 import Data.Time.LocalTime
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Control
 import Data.List as List
+import Data.Aeson
 
 --add Maybe monad to some type
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
+    year Int
+    season Season
     gameId Int
     awayId String
     homeId String
@@ -53,6 +62,8 @@ Game
     UniqueGameId gameId
     deriving Show
 Period
+    year Int
+    season Season
     gameId Int
     teamId String
     period Int
@@ -61,6 +72,8 @@ Period
     UniquePeriodId gameId teamId period
     deriving Show
 Video
+    year Int
+    season Season
     gameId Int
     awayId String
     homeId String
@@ -72,6 +85,8 @@ Video
     deriving Show
 Event
     eventId Int
+    year Int
+    season Season
     gameId Int
     teamId String
     period Int
@@ -91,6 +106,7 @@ Team
     deriving Show
 PlayoffSeed
     year Int
+    season Season
     conference String
     round Int
     seed Int
@@ -107,3 +123,23 @@ selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> [Day] -> m [Gam
 selectGames database dates = do
     games <- database `process` (selectList [GameDate <-. dates] [])
     return $ List.map entityVal games
+
+selectPeriods :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Period]
+selectPeriods database year season =  do
+    periods <- database `process` (selectList [PeriodYear ==. (integerToInt (fst year))] [])
+    return $ List.map entityVal periods
+
+selectSeeds :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [PlayoffSeed]
+selectSeeds database year season =  do
+    seeds <- database `process` (selectList [PlayoffSeedYear ==. (integerToInt (fst year))] [])
+    return $ List.map entityVal seeds
+
+selectGamesForSeason :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Game]
+selectGamesForSeason database year season =  do
+    games <- database `process` (selectList [GameYear ==. (integerToInt (fst year))] [])
+    return $ List.map entityVal games
+
+selectEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Event]
+selectEvents database year season =  do
+    events <- database `process` (selectList [EventYear ==. (integerToInt (fst year))] [])
+    return $ List.map entityVal events
