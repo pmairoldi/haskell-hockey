@@ -15,6 +15,9 @@ import Yesod
 empty :: String
 empty = []
 
+active :: Int
+active = 1
+
 -- Period
 instance ToJSON Period where
     toJSON Period {..} = object [ "teamID" .= periodTeamId, "gameID" .= periodGameId, "period" .= periodPeriod, "goals" .= periodGoals, "shots" .= periodShots ]
@@ -25,7 +28,7 @@ instance ToJSON PlayoffSeed where
 
 -- Team
 instance ToJSON Game where
-    toJSON Game {..} = object [ "seasonID" .= ((formattedYear (intToInteger gameYear)) ++ (formattedSeason gameSeason)), "awayID" .= gameAwayId, "homeID" .= gameHomeId, "awayScore" .= gameAwayScore, "homeScore" .= gameHomeScore, "gameID" .= gameGameId, "date" .= (show gameDate), "time" .= (show gameTime), "tv" .= gameTv, "period" .= gamePeriod, "periodTime" .= gamePeriodTime, "homeStatus" .= gameHomeStatus, "awayStatus" .= gameAwayStatus, "homeHighlight" .= empty, "awayHighlight" .= empty, "homeCondense" .= empty, "awayCondense" .= empty ]
+    toJSON Game {..} = object [ "seasonID" .= ((formattedYear (intToInteger gameYear)) ++ (formattedSeason gameSeason)), "awayID" .= gameAwayId, "homeID" .= gameHomeId, "awayScore" .= gameAwayScore, "homeScore" .= gameHomeScore, "gameID" .= gameGameId, "date" .= (show gameDate), "time" .= (show gameTime), "tv" .= gameTv, "period" .= gamePeriod, "periodTime" .= gamePeriodTime, "homeStatus" .= gameHomeStatus, "awayStatus" .= gameAwayStatus, "homeHighlight" .= empty, "awayHighlight" .= empty, "homeCondense" .= empty, "awayCondense" .= empty, "active" .= active]
 
 -- Event
 instance ToJSON Event where
