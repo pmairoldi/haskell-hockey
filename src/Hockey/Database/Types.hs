@@ -126,20 +126,20 @@ selectGames database dates = do
 
 selectPeriods :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Period]
 selectPeriods database year season =  do
-    periods <- database `process` (selectList [PeriodYear ==. (integerToInt (fst year))] [])
+    periods <- database `process` (selectList [PeriodYear ==. (integerToInt (fst year)), PeriodSeason ==. season] [])
     return $ List.map entityVal periods
 
 selectSeeds :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [PlayoffSeed]
 selectSeeds database year season =  do
-    seeds <- database `process` (selectList [PlayoffSeedYear ==. (integerToInt (fst year))] [])
+    seeds <- database `process` (selectList [PlayoffSeedYear ==. (integerToInt (fst year)), PlayoffSeedSeason ==. season] [])
     return $ List.map entityVal seeds
 
 selectGamesForSeason :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Game]
 selectGamesForSeason database year season =  do
-    games <- database `process` (selectList [GameYear ==. (integerToInt (fst year))] [])
+    games <- database `process` (selectList [GameYear ==. (integerToInt (fst year)), GameSeason ==. season] [])
     return $ List.map entityVal games
 
 selectEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Event]
 selectEvents database year season =  do
-    events <- database `process` (selectList [EventYear ==. (integerToInt (fst year))] [])
+    events <- database `process` (selectList [EventYear ==. (integerToInt (fst year)), EventSeason ==. season] [])
     return $ List.map entityVal events
