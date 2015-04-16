@@ -70,7 +70,8 @@ data Game = Game {
     awaySog :: Int,
     homeSog :: Int,
     gameTime :: TimeOfDay,
-    periodTime :: String
+    periodTime :: String,
+    gamePeriod :: Int
 } deriving (Show, Generic)
 
 data Results = Results {

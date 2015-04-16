@@ -38,7 +38,8 @@ parseGame v = Game <$>
     fmap valueToInteger (v .:? "atsog") <*>
     fmap valueToInteger (v .:? "htsog") <*>
     fmap unpackParseTime (v .: "bs") <*>
-    fmap removeGameTime (v .: "bs")
+    fmap removeGameTimeAndPeriod (v .: "bs") <*>
+    fmap periodFromPeriodString (v .: "bs")
 
 -- Results
 instance FromJSON Results where

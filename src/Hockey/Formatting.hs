@@ -32,6 +32,8 @@ module Hockey.Formatting (
     day,
     splitCommaDelimited,
     periodFromPeriodTime,
+    removeGameTimeAndPeriod,
+    periodFromPeriodString,
     valueToInteger,
     splitAndJoin,
     joinStrings,
@@ -46,7 +48,8 @@ module Hockey.Formatting (
     seasonYears,
     cmpSeason,
     integerToInt,
-    intToInteger
+    intToInteger,
+    capitalized,
 ) where
 
 import Hockey.Types
@@ -172,7 +175,10 @@ capitalized (head:tail) = Char.toUpper head : lowered tail
 removeGameTime :: String -> String
 removeGameTime value
         | stringContainsAMPM value = ""
-        | otherwise = capitalized (List.takeWhile (/= ' ') value)
+        | otherwise = List.map Char.toLower value
+
+removeGameTimeAndPeriod :: String -> String
+removeGameTimeAndPeriod value = List.map Char.toUpper (List.takeWhile (/= ' ') (removeGameTime value))
 
 -- make function take day instead
 year :: (Integer, Int, Int) -> Integer
@@ -200,6 +206,9 @@ periodFromPeriodTime t
             otherwise -> 3 + offset
     | "so" `List.isSuffixOf` t = 5
     | otherwise = 0
+
+periodFromPeriodString :: String -> Int
+periodFromPeriodString t = periodFromPeriodTime (removeGameTime t)
 
 -- Stupid NHL returning "" in their json when it is a number
 valueToInteger :: Maybe Value -> Int

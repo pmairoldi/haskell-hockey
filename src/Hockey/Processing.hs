@@ -39,7 +39,7 @@ getDates (x:xs) = do
         return $ h ++ t
 
 dbGame :: T.Game -> Day -> DB.Game
-dbGame game date = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game) (periodFromPeriodTime $ periodTime game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
+dbGame game date = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
 
 convertGames :: [T.Game] -> Day -> [DB.Game]
 convertGames [] _ = []
