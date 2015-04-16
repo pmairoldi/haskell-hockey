@@ -138,6 +138,7 @@ processTeams db teams = db `process` (upsertMany (getTeams teams))
 processSeeds :: Database -> [Seed] -> IO ()
 processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 
+-- insert time only if the state is none
 processGames :: Database -> [Day] -> IO ()
 processGames db xs = do
     values <- getGames xs

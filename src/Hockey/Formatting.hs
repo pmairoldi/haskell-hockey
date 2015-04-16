@@ -162,10 +162,17 @@ unpackParseTime text
     in timeFromComponents (components !! 0)  (components !! 1) ampm
     | otherwise = timeFromComponents 0 0 AM
 
+capitalized :: String -> String
+capitalized [] = []
+capitalized (head:tail) = Char.toUpper head : lowered tail
+    where
+    lowered [] = []
+    lowered (head:tail) = Char.toLower head : lowered tail
+
 removeGameTime :: String -> String
 removeGameTime value
         | stringContainsAMPM value = ""
-        | otherwise = (List.takeWhile (/= ' ') value)
+        | otherwise = capitalized (List.takeWhile (/= ' ') value)
 
 -- make function take day instead
 year :: (Integer, Int, Int) -> Integer
