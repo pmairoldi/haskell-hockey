@@ -27,7 +27,7 @@ type Result a b = SqlPersistM a -> b
 
 data DatabaseType = Postgres | SQLite deriving (Enum, Show, Read, Eq)
 
-data LoggingType = None | Debug deriving (Enum, Show, Read, Eq)
+data LoggingType = None | Info | Debug deriving (Enum, Show, Read, Eq)
 
 data Database = Database {
     dbType :: DatabaseType,
@@ -67,5 +67,5 @@ connection database = case (dbType database) of
 
 process :: (MonadBaseControl IO m, MonadIO m) => Database -> Result a (m a)
 process database queries = case (logging database) of
-    None -> db runNoLoggingT (connection database) queries
     Debug -> db runStderrLoggingT (connection database) queries
+    otherwise -> db runNoLoggingT (connection database) queries

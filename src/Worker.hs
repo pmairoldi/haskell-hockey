@@ -21,29 +21,45 @@ bootstrap s y= do
     dates <- getDates (months s y)
     return $ List.map date (filter (\x -> x `cmpSeason` s) dates)
 
+logMsg :: Show a => a -> LoggingType -> IO ()
+logMsg msg loggingType = do
+    e <- env
+    case ((logType e), loggingType) of
+        (Debug, Debug) -> print msg
+        (Info, Info) -> print msg
+        otherwise -> return ()
+
 run :: Database -> Season -> Year -> [Day] -> IO ()
 run db s y dates = do
     migrate db
 
-    print "Processing Teams"
+    startTime <- getCurrentTime
+
+    logMsg "Processing Teams" Debug
     processTeams db teams
 
     case s of
-        Playoffs -> processSeeds db (seeds y) -- get seeds from standings
+        Playoffs -> do
+            logMsg "Processing Seeds" Debug
+            processSeeds db (seeds y) -- get seeds from standings
 
-    print "Processing Games"
+    logMsg "Processing Games" Debug
     processGames db dates
 
     games <- selectGames db dates
 
-    print "Processing Periods"
+    logMsg "Processing Periods" Debug
     processPeriods db games
 
-    print "Processing Events"
+    logMsg "Processing Events" Debug
     processEvents db games
 
-    print "Processing Videos"
+    logMsg "Processing Videos" Debug
     processVideos db games
+
+    endTime <- getCurrentTime
+
+    logMsg (diffUTCTime endTime startTime) Info
 
     return ()
 

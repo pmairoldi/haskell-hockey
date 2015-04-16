@@ -165,7 +165,7 @@ unpackParseTime text
 removeGameTime :: String -> String
 removeGameTime value
         | stringContainsAMPM value = ""
-        | otherwise = List.map Char.toLower value
+        | otherwise = (List.takeWhile (/= ' ') value)
 
 -- make function take day instead
 year :: (Integer, Int, Int) -> Integer
