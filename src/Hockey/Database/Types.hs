@@ -17,6 +17,7 @@ module Hockey.Database.Types (
     Team(..),
     PlayoffSeed(..),
     Period(..),
+    selectTimeForGame,
     selectGames,
     selectPeriods,
     selectSeeds,
@@ -30,8 +31,8 @@ import Database.Persist.Postgresql hiding (migrate)
 import Database.Persist.Sqlite hiding (migrate)
 import Database.Persist.TH
 import Hockey.Database.Internal
-import Hockey.Types (GameState(..), EventType(..), Strength(..), Season(..), Year(..))
-import Hockey.Formatting (integerToInt)
+import Hockey.Types (GameState(..), EventType(..), Strength(..), Season(..), Year(..), AMPM(..))
+import Hockey.Formatting (integerToInt, timeFromComponents)
 import Data.Time.Calendar
 import Data.Time.LocalTime
 import Control.Monad.IO.Class
@@ -118,6 +119,13 @@ PlayoffSeed
 
 migrate :: (MonadBaseControl IO m, MonadIO m) => Database -> m ()
 migrate database = database `process` (runMigration migrateAll)
+
+selectTimeForGame :: (MonadBaseControl IO m, MonadIO m) => Database -> Int -> m TimeOfDay
+selectTimeForGame database gameId = do
+    games <- database `process` (selectList [GameGameId ==. gameId] [LimitTo 1])
+    case games of
+        [] -> return $ timeFromComponents 0 0 AM
+        (x:xs) -> return $ (gameTime (entityVal x))
 
 selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> [Day] -> m [Game]
 selectGames database dates = do

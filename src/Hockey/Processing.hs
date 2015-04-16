@@ -38,25 +38,36 @@ getDates (x:xs) = do
         t <- getDates xs
         return $ h ++ t
 
-dbGame :: T.Game -> Day -> DB.Game
-dbGame game date = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date (T.gameTime game) (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
+compareTimes :: TimeOfDay -> TimeOfDay -> TimeOfDay
+compareTimes currentTime fetchedTime
+    | currentTime == fetchedTime = fetchedTime
+    | fetchedTime == (timeFromComponents 0 0 AM) = currentTime
+    | otherwise = fetchedTime
 
-convertGames :: [T.Game] -> Day -> [DB.Game]
-convertGames [] _ = []
-convertGames (x:xs) d = [(dbGame x d)] ++ (convertGames xs d)
+dbGame :: T.Game -> Day ->TimeOfDay -> DB.Game
+dbGame game date time = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date time (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
 
-fetchGames :: Day -> IO [DB.Game]
-fetchGames date = do
+convertGames :: Database -> [T.Game] -> Day -> IO [DB.Game]
+convertGames _ [] _ = return $ []
+convertGames db (x:xs) d = do
+    time <- selectTimeForGame db (gameId x)
+    convGames <- (convertGames db xs d)
+
+    print (compareTimes time (T.gameTime x))
+    return $ convGames ++ [(dbGame x d (compareTimes time $ T.gameTime x))]
+
+fetchGames :: Database -> Day -> IO [DB.Game]
+fetchGames db date = do
     results <- (getResults date)
     case results of
-        Just value -> return (convertGames (games value) (currentDate value))
+        Just value -> (convertGames db (games value) (currentDate value))
         Nothing -> return []
 
-getGames :: [Day] -> IO [DB.Game]
-getGames [] = return []
-getGames (x:xs) = do
-        h <- fetchGames x
-        t <- getGames xs
+getGames :: Database -> [Day] -> IO [DB.Game]
+getGames _ [] = return []
+getGames db (x:xs) = do
+        h <- fetchGames db x
+        t <- getGames db xs
         return $ h ++ t
 
 -- fix getting videos
@@ -141,7 +152,7 @@ processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 -- insert time only if the state is none
 processGames :: Database -> [Day] -> IO ()
 processGames db xs = do
-    values <- getGames xs
+    values <- getGames db xs
     db `process` (upsertMany values)
 
 processPeriods :: Database -> [DB.Game] -> IO ()
