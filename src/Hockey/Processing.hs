@@ -4,7 +4,6 @@ module Hockey.Processing (
     processTeams,
     processGames,
     processEvents,
-    processVideos,
     processSeeds,
     processPeriods
 )
@@ -44,16 +43,17 @@ compareTimes currentTime fetchedTime
     | fetchedTime == (timeFromComponents 0 0 AM) = currentTime
     | otherwise = fetchedTime
 
-dbGame :: T.Game -> Day ->TimeOfDay -> DB.Game
-dbGame game date time = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date time (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" ""
+dbGame :: T.Game -> Day -> TimeOfDay -> (String, String) -> DB.Game
+dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date time (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" "" (fst videos) (snd videos) [] []
 
 convertGames :: Database -> [T.Game] -> Day -> IO [DB.Game]
 convertGames _ [] _ = return $ []
 convertGames db (x:xs) d = do
     time <- selectTimeForGame db (gameId x)
+    videos <- fetchVideos x d
     convGames <- (convertGames db xs d)
 
-    return $ convGames ++ [(dbGame x d (compareTimes time $ T.gameTime x))]
+    return $ convGames ++ [(dbGame x d (compareTimes time $ T.gameTime x) videos)]
 
 fetchGames :: Database -> Day -> IO [DB.Game]
 fetchGames db date = do
@@ -69,30 +69,20 @@ getGames db (x:xs) = do
         t <- getGames db xs
         return $ h ++ t
 
-dbVideo :: DB.Game -> String -> String -> String -> String -> DB.Video
-dbVideo game awayHighlight homeHighlight awayCondense homeCondense = DB.Video (yearFromGameId (gameGameId game)) (seasonFromGameId (gameGameId game)) (gameGameId game) awayHighlight homeHighlight awayCondense homeCondense
-
 processLink :: Maybe String -> String
 processLink link = case link of
     Just value -> value
     Nothing -> []
 
-processYear :: DB.Game -> Year
-processYear game = (intToInteger (gameYear game), intToInteger (gameYear game) + 1)
+processYear :: T.Game -> Year
+processYear game = (intToInteger (yearFromGameId (gameId game)), intToInteger (yearFromGameId (gameId game)) + 1)
 
-fetchVideos :: DB.Game -> IO DB.Video
-fetchVideos game = do
-    homeHighlight <- getVideo (gameDate game) (processYear game)  (gameSeason game) (gameGameId game) (gameAwayId game) (gameHomeId game) Home
-    awayHighlight <- getVideo (gameDate game) (processYear game) (gameSeason game) (gameGameId game) (gameAwayId game) (gameHomeId game) Away
+fetchVideos :: T.Game -> Day -> IO (String, String)
+fetchVideos game date = do
+    homeHighlight <- getVideo date (processYear game) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) Home
+    awayHighlight <- getVideo date (processYear game) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) Away
 
-    return $ dbVideo game (processLink awayHighlight) (processLink homeHighlight) [] []
-
-getVideos :: [DB.Game] -> IO [DB.Video]
-getVideos [] = return []
-getVideos (x:xs) = do
-    h <- fetchVideos x
-    t <- getVideos xs
-    return $ [h] ++ t
+    return $ ((processLink awayHighlight), (processLink homeHighlight))
 
 pickTeam :: Int -> (Int, String) -> (Int, String) -> String
 pickTeam teamId (awayId, awayName) (homeId, homeName)
@@ -177,9 +167,4 @@ processPeriods db xs = do
 processEvents :: Database -> [DB.Game] -> IO ()
 processEvents db xs = do
     values <- getEvents xs
-    db `process` (upsertMany values)
-
-processVideos :: Database -> [DB.Game] -> IO ()
-processVideos db xs = do
-    values <- getVideos xs
     db `process` (upsertMany values)

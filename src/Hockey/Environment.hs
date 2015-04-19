@@ -23,7 +23,8 @@ data Environment = Environment {
     year :: Year,
     season :: Season,
     logType :: LoggingType,
-    port :: Int
+    port :: Int,
+    range :: Int
 } deriving (Show)
 
 env :: IO (Environment)
@@ -41,8 +42,14 @@ env = do
     seas <- lookupEnv "SEASON"
     logs <- lookupEnv "LOG_TYPE"
     port <- lookupEnv "PORT"
+    range <- lookupEnv "RANGE"
 
-    return $ Environment (read (fromJust t) :: DatabaseType) (fromJust name) (fromJust host) (stringToInt (fromJust dbport)) (fromJust user) (fromJust pass) (stringToInt (fromJust conn)) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType) (getPort port)
+    return $ Environment (read (fromJust t) :: DatabaseType) (fromJust name) (fromJust host) (stringToInt (fromJust dbport)) (fromJust user) (fromJust pass) (stringToInt (fromJust conn)) (seasonYears $ stringToInteger (fromJust year)) (read (fromJust seas) :: Season) (read (fromJust logs) :: LoggingType) (getPort port) (getRange range)
+
+getRange :: Maybe String -> Int
+getRange r = case r of
+        Just v -> (read v :: Int)
+        Nothing -> 1
 
 getPort :: Maybe String -> Int
 getPort p = case p of

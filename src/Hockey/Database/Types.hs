@@ -12,7 +12,6 @@
 module Hockey.Database.Types (
     migrate,
     Game(..),
-    Video(..),
     Event(..),
     Team(..),
     PlayoffSeed(..),
@@ -40,7 +39,8 @@ import Control.Monad.Trans.Control
 import Data.List as List
 import Data.Aeson
 
---add Maybe monad to some type
+-- add Maybe monad to some type
+-- have videos be a map
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
     year Int
@@ -58,8 +58,12 @@ Game
     homeScore Int
     awaySog Int
     homeSog Int
-    awayStatus String
-    homeStatus String
+    awayStatus String default=''
+    homeStatus String default=''
+    awayHighlight String default=''
+    homeHighlight String default=''
+    awayCondense String default=''
+    homeCondense String default=''
     UniqueGameId gameId
     deriving Show
 Period
@@ -71,16 +75,6 @@ Period
     shots Int
     goals Int
     UniquePeriodId gameId teamId period
-    deriving Show
-Video
-    year Int
-    season Season
-    gameId Int
-    awayHighlight String
-    homeHighlight String
-    awayCondense String
-    homeCondense String
-    UniqueVideoId gameId
     deriving Show
 Event
     eventId Int

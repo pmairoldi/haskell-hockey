@@ -11,10 +11,10 @@ currentDay = do
     c <- getCurrentTime
     return $ utctDay c
 
-dates :: Season -> Year -> Day -> IO [Day]
-dates s y day = do
+dates :: Season -> Year -> Day -> Integer -> IO [Day]
+dates s y day range = do
     dates <- getDates (months s y) -- split months if this is too long
-    return $ filter (\x -> x >= (addDays (-2) day) && x <= (addDays 2 day)) (List.map date (filter (\x -> (x `cmpSeason` s)) dates))
+    return $ filter (\x -> x >= (addDays (-range) day) && x <= (addDays range day)) (List.map date (filter (\x -> (x `cmpSeason` s)) dates))
 
 bootstrap :: Season -> Year -> IO [Day]
 bootstrap s y= do
@@ -54,9 +54,6 @@ run db s y dates = do
     logMsg "Processing Events" Debug
     processEvents db games
 
-    logMsg "Processing Videos" Debug
-    processVideos db games
-
     endTime <- getCurrentTime
 
     logMsg (diffUTCTime endTime startTime) Info
@@ -76,7 +73,8 @@ main = do
     let db = (database e)
     let s = (season e)
     let y = (year e)
+    let r = intToInteger (range e)
 
     run db s y =<< case isBootStrap args of
         True -> bootstrap s y
-        False -> dates s y day
+        False -> dates s y day r
