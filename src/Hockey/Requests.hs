@@ -12,7 +12,8 @@ module Hockey.Requests (
     getResults,
     getGameDates,
     getGameEvents,
-    getGamePeriods
+    getGamePeriods,
+    getVideo
 ) where
 
 import Hockey.Network
@@ -20,6 +21,7 @@ import Hockey.Parsing
 import Hockey.Types
 import Hockey.Formatting
 import Data.Time.Calendar
+import Hockey.Video
 
 -- add type alias to make it easier to understand
 
@@ -80,3 +82,6 @@ getGameEvents year season game = decodeResponse $ getResponse $ playByPlayUrl ye
 
 getGamePeriods :: Integer -> Season -> Integer -> IO (Maybe Scoreboard)
 getGamePeriods year season game = decodeResponse $ getResponse $ scoreboardUrl year season game
+
+getVideo :: Day -> Year -> Season -> Int -> String -> String -> HomeAway -> IO (Maybe String)
+getVideo date year season game awayAbr homeAbr homeAway = ping $ videoUrl date year season (gameFromGameId game) awayAbr homeAbr homeAway

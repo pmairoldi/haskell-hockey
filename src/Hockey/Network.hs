@@ -1,6 +1,7 @@
 module Hockey.Network (
     ReturnType(..),
-    get
+    get,
+    ping
 ) where
 
 import Network.HTTP
@@ -13,6 +14,16 @@ get url responseType
     | responseType == JSONP = jsonpRequestParse response
     | otherwise = requestParse response
     where response = openUrl url
+
+ping :: String -> IO (Maybe String)
+ping url = do
+    ping <- pingUrl url
+    case ping of
+        (2,_,_) -> return $ Just (url)
+        otherwise -> return $ Nothing
+
+pingUrl :: String -> IO ResponseCode
+pingUrl url = simpleHTTP (headRequest url) >>= getResponseCode
 
 openUrl :: String -> IO String
 openUrl url = simpleHTTP (getRequest url) >>= getResponseBody

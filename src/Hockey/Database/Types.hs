@@ -76,8 +76,6 @@ Video
     year Int
     season Season
     gameId Int
-    awayId String
-    homeId String
     awayHighlight String
     homeHighlight String
     awayCondense String

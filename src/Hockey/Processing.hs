@@ -53,7 +53,6 @@ convertGames db (x:xs) d = do
     time <- selectTimeForGame db (gameId x)
     convGames <- (convertGames db xs d)
 
-    print (compareTimes time (T.gameTime x))
     return $ convGames ++ [(dbGame x d (compareTimes time $ T.gameTime x))]
 
 fetchGames :: Database -> Day -> IO [DB.Game]
@@ -70,15 +69,30 @@ getGames db (x:xs) = do
         t <- getGames db xs
         return $ h ++ t
 
--- fix getting videos
-dbVideo :: DB.Game -> DB.Video
-dbVideo game = DB.Video (yearFromGameId (gameGameId game)) (seasonFromGameId (gameGameId game)) (gameGameId game) (gameAwayId game) (gameHomeId game) "" "" "" ""
+dbVideo :: DB.Game -> String -> String -> String -> String -> DB.Video
+dbVideo game awayHighlight homeHighlight awayCondense homeCondense = DB.Video (yearFromGameId (gameGameId game)) (seasonFromGameId (gameGameId game)) (gameGameId game) awayHighlight homeHighlight awayCondense homeCondense
 
-fetchVideos :: DB.Game -> DB.Video
-fetchVideos game = dbVideo game
+processLink :: Maybe String -> String
+processLink link = case link of
+    Just value -> value
+    Nothing -> []
+
+processYear :: DB.Game -> Year
+processYear game = (intToInteger (gameYear game), intToInteger (gameYear game) + 1)
+
+fetchVideos :: DB.Game -> IO DB.Video
+fetchVideos game = do
+    homeHighlight <- getVideo (gameDate game) (processYear game)  (gameSeason game) (gameGameId game) (gameAwayId game) (gameHomeId game) Home
+    awayHighlight <- getVideo (gameDate game) (processYear game) (gameSeason game) (gameGameId game) (gameAwayId game) (gameHomeId game) Away
+
+    return $ dbVideo game (processLink awayHighlight) (processLink homeHighlight) [] []
 
 getVideos :: [DB.Game] -> IO [DB.Video]
-getVideos xs = return $ List.map fetchVideos xs
+getVideos [] = return []
+getVideos (x:xs) = do
+    h <- fetchVideos x
+    t <- getVideos xs
+    return $ [h] ++ t
 
 pickTeam :: Int -> (Int, String) -> (Int, String) -> String
 pickTeam teamId (awayId, awayName) (homeId, homeName)

@@ -50,6 +50,7 @@ module Hockey.Formatting (
     integerToInt,
     intToInteger,
     capitalized,
+    shortYear,
 ) where
 
 import Hockey.Types
@@ -90,6 +91,9 @@ fullGameId year season game = (formattedYear year) ++ (formattedSeason season) +
 
 fullYear :: Integer -> String
 fullYear year = (formattedYear year) ++ (formattedYear (year + 1))
+
+shortYear :: Year -> String
+shortYear year = (List.drop 2 (formattedYear (fst year))) ++ (List.drop 2 (formattedYear (snd year)))
 
 fullDate :: Integer -> Integer -> Integer -> String
 fullDate year month day = (formattedYear year) ++ "-" ++ (formattedMonth month) ++ "-" ++ (formattedDay day)

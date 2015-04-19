@@ -21,6 +21,7 @@ module Hockey.Types (
     PeriodData(..),
     ScoreboardData(..),
     Scoreboard(..),
+    HomeAway(..),
     fromGameState,
     toGameState,
     fromSeason,
@@ -28,7 +29,9 @@ module Hockey.Types (
     fromEventType,
     toEventType,
     fromStrength,
-    toStrength
+    toStrength,
+    fromHomeAway,
+    toHomeAway
 ) where
 
 import GHC.Generics
@@ -43,6 +46,8 @@ data Team = Team {
     city :: String,
     name :: String
 } deriving (Show)
+
+data HomeAway = Home | Away deriving (Enum, Show, Eq)
 
 data AMPM = AM | PM deriving (Enum, Show, Eq)
 
@@ -178,6 +183,15 @@ toEventType "penalty" = Penalty
 toEventType "goal" = Goal
 toEventType "fight" = Fight
 toEventType _ = Unknown
+
+fromHomeAway :: HomeAway -> String
+fromHomeAway Home = "h"
+fromHomeAway Away = "a"
+
+toHomeAway :: String -> HomeAway
+toHomeAway "h" = Home
+toHomeAway "a" = Away
+toHomeAway _ = Home
 
 -- check theese
 fromStrength :: Strength -> Int
