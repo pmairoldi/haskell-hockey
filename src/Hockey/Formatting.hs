@@ -51,6 +51,7 @@ module Hockey.Formatting (
     intToInteger,
     capitalized,
     shortYear,
+    boolToInt
 ) where
 
 import Hockey.Types
@@ -280,3 +281,8 @@ seasonYears year = (year, year + 1)
 
 cmpSeason :: GameDate -> Season -> Bool
 cmpSeason x s = (season x) == s
+
+boolToInt :: Bool -> Int
+boolToInt value
+    | value == True = 1
+    | otherwise = 0

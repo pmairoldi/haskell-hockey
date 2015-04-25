@@ -5,18 +5,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- import Data.Text (Text)
 import Hockey.Database hiding (port)
 import Hockey.Environment
-import Hockey.Formatting (formattedGame, formattedSeason, formattedYear, intToInteger, fromStrength, fromEventType)
+import Hockey.Formatting (formattedGame, formattedSeason, formattedYear, intToInteger, fromStrength, fromEventType, boolToInt)
 import Control.Monad.IO.Class
 import Yesod
-
-empty :: String
-empty = []
-
-active :: Int
-active = 1
 
 -- Period
 instance ToJSON Period where
@@ -28,7 +21,7 @@ instance ToJSON PlayoffSeed where
 
 -- Team
 instance ToJSON Game where
-    toJSON Game {..} = object [ "seasonID" .= ((formattedYear (intToInteger gameYear)) ++ (formattedSeason gameSeason)), "awayID" .= gameAwayId, "homeID" .= gameHomeId, "awayScore" .= gameAwayScore, "homeScore" .= gameHomeScore, "gameID" .= gameGameId, "date" .= (show gameDate), "time" .= (show gameTime), "tv" .= gameTv, "period" .= gamePeriod, "periodTime" .= gamePeriodTime, "homeStatus" .= gameHomeStatus, "awayStatus" .= gameAwayStatus, "homeHighlight" .= gameHomeHighlight, "awayHighlight" .= gameAwayHighlight, "homeCondense" .= gameHomeCondense, "awayCondense" .= gameAwayCondense, "active" .= active]
+    toJSON Game {..} = object [ "seasonID" .= ((formattedYear (intToInteger gameYear)) ++ (formattedSeason gameSeason)), "awayID" .= gameAwayId, "homeID" .= gameHomeId, "awayScore" .= gameAwayScore, "homeScore" .= gameHomeScore, "gameID" .= gameGameId, "date" .= (show gameDate), "time" .= (show gameTime), "tv" .= gameTv, "period" .= gamePeriod, "periodTime" .= gamePeriodTime, "homeStatus" .= gameHomeStatus, "awayStatus" .= gameAwayStatus, "homeHighlight" .= gameHomeHighlight, "awayHighlight" .= gameAwayHighlight, "homeCondense" .= gameHomeCondense, "awayCondense" .= gameAwayCondense, "active" .= (boolToInt gameActive)]
 
 -- Event
 instance ToJSON Event where

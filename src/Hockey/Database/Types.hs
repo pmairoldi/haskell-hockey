@@ -64,6 +64,7 @@ Game
     homeHighlight String default=''
     awayCondense String default=''
     homeCondense String default=''
+    active Bool default=True
     UniqueGameId gameId
     deriving Show
 Period

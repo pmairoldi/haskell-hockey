@@ -44,7 +44,7 @@ compareTimes currentTime fetchedTime
     | otherwise = fetchedTime
 
 dbGame :: T.Game -> Day -> TimeOfDay -> (String, String) -> DB.Game
-dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date time (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" "" (fst videos) (snd videos) [] []
+dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date time (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" "" (fst videos) (snd videos) [] [] True
 
 convertGames :: Database -> [T.Game] -> Day -> IO [DB.Game]
 convertGames _ [] _ = return $ []
