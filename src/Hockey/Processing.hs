@@ -160,6 +160,7 @@ getSeries db year (x:xs) = do
 
 compareTeamScore :: DB.Game -> String -> Bool
 compareTeamScore game team
+    | (DB.gameState game) /= Final = False
     | team == (gameHomeId game) = homeScore > awayScore
     | team == (gameAwayId game) = awayScore > homeScore
     | otherwise = False
