@@ -16,9 +16,9 @@ import Yesod
 instance ToJSON Period where
     toJSON Period {..} = object [ "teamID" .= periodTeamId, "gameID" .= periodGameId, "period" .= periodPeriod, "goals" .= periodGoals, "shots" .= periodShots ]
 
--- Team
+-- Seeds
 instance ToJSON PlayoffSeed where
-    toJSON PlayoffSeed {..} = object [ "seasonID" .= ((formattedYear (intToInteger playoffSeedYear)) ++ (formattedSeason Playoffs)), "conference" .= playoffSeedConference, "seed" .= playoffSeedSeed, "homeID" .= playoffSeedHomeId, "awayID" .= playoffSeedAwayId, "round" .= playoffSeedRound ]
+    toJSON PlayoffSeed {..} = object [ "seasonID" .= ((formattedYear (intToInteger playoffSeedYear)) ++ (formattedSeason Playoffs)), "conference" .= playoffSeedConference, "seed" .= playoffSeedSeries, "homeID" .= playoffSeedHomeId, "awayID" .= playoffSeedAwayId, "round" .= playoffSeedRound ]
 
 -- Team
 instance ToJSON Game where

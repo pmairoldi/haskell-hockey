@@ -104,11 +104,13 @@ PlayoffSeed
     year Int
     conference String
     round Int
-    seed Int
+    series Int
     homeId String
     awayId String
-    UniquePlayoffSeedId year conference round seed
-    deriving Show
+    homeSeed Int default=0
+    awaySeed Int default=0
+    UniquePlayoffSeedId year conference round series
+    deriving Show Eq
 |]
 
 migrate :: (MonadBaseControl IO m, MonadIO m) => Database -> m ()

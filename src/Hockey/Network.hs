@@ -23,9 +23,11 @@ ping url = do
         otherwise -> return $ Nothing
 
 pingUrl :: String -> IO ResponseCode
+pingUrl [] = return $ (4,0,4)
 pingUrl url = simpleHTTP (headRequest url) >>= getResponseCode
 
 openUrl :: String -> IO String
+openUrl [] = return $ []
 openUrl url = simpleHTTP (getRequest url) >>= getResponseBody
 
 jsonpRequestParse :: IO String -> IO String

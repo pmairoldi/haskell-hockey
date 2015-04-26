@@ -120,7 +120,7 @@ getEvents (x:xs) = do
     return $ h ++ t
 
 dbSeed :: Seed -> DB.PlayoffSeed
-dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed)
+dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed) 0 0
 
 getSeeds :: [Seed] -> [DB.PlayoffSeed]
 getSeeds seeds = List.map dbSeed seeds
@@ -211,4 +211,9 @@ processSeries :: Database -> Year -> IO ()
 processSeries db year = do
     seeds <- selectSeeds db year
     series <- getSeries db year seeds
-    updateGamesToInactive db $ List.concat $ List.map (\x -> (snd x)) (List.map snd (filterSeries series))
+
+    let filteredSeries = filterSeries series
+    let updatedSeeds = (updateSeeds year $ List.map (\x -> (fst x, fst (snd x))) filteredSeries)
+
+    db `process` (upsertMany updatedSeeds)
+    updateGamesToInactive db $ List.concat $ List.map (\x -> snd x) $ List.map snd filteredSeries

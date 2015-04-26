@@ -26,6 +26,7 @@ logMsg msg loggingType = do
     e <- env
     case ((logType e), loggingType) of
         (Debug, Debug) -> print msg
+        (Debug, Info) -> print msg
         (Info, Info) -> print msg
         otherwise -> return ()
 
@@ -34,9 +35,6 @@ run db s y dates = do
     migrate db
 
     startTime <- getCurrentTime
-
-    logMsg "Processing Teams" Debug
-    processTeams db teams
 
     logMsg "Processing Games" Debug
     processGames db dates
@@ -75,6 +73,17 @@ main = do
     let s = (season e)
     let y = (year e)
     let r = intToInteger (range e)
+
+    case isBootStrap args of
+        True -> do
+            logMsg "Processing Teams" Debug
+            processTeams db teams
+
+            logMsg "Processing Series" Debug
+            processSeries db y
+            processSeries db y
+            processSeries db y
+        False -> return ()
 
     run db s y =<< case isBootStrap args of
         True -> bootstrap s y
