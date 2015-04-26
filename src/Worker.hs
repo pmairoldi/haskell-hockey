@@ -38,11 +38,6 @@ run db s y dates = do
     logMsg "Processing Teams" Debug
     processTeams db teams
 
-    case s of
-        Playoffs -> do
-            logMsg "Processing Seeds" Debug
-            processSeeds db (seeds y) -- get seeds from standings
-
     logMsg "Processing Games" Debug
     processGames db dates
 
@@ -53,6 +48,12 @@ run db s y dates = do
 
     logMsg "Processing Events" Debug
     processEvents db games
+
+    case s of
+        Playoffs -> do
+            logMsg "Processing Seeds" Debug
+            processSeeds db (seeds y) -- get seeds from standings
+            processSeries db y
 
     endTime <- getCurrentTime
 

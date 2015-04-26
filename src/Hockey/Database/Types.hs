@@ -21,7 +21,9 @@ module Hockey.Database.Types (
     selectPeriods,
     selectSeeds,
     selectGamesForSeason,
-    selectEvents
+    selectEvents,
+    selectGamesForSeries,
+    updateGamesToInactive
 )
 
 where
@@ -29,7 +31,7 @@ where
 import Database.Persist.Postgresql hiding (migrate)
 import Database.Persist.Sqlite hiding (migrate)
 import Database.Persist.TH
-import Hockey.Database.Internal
+import Hockey.Database.Internal hiding (None)
 import Hockey.Types (GameState(..), EventType(..), Strength(..), Season(..), Year(..), AMPM(..))
 import Hockey.Formatting (integerToInt, timeFromComponents)
 import Data.Time.Calendar
@@ -100,7 +102,6 @@ Team
     deriving Show
 PlayoffSeed
     year Int
-    season Season
     conference String
     round Int
     seed Int
@@ -130,9 +131,9 @@ selectPeriods database year season =  do
     periods <- database `process` (selectList [PeriodYear ==. (integerToInt (fst year)), PeriodSeason ==. season] [])
     return $ List.map entityVal periods
 
-selectSeeds :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [PlayoffSeed]
-selectSeeds database year season =  do
-    seeds <- database `process` (selectList [PlayoffSeedYear ==. (integerToInt (fst year)), PlayoffSeedSeason ==. season] [])
+selectSeeds :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> m [PlayoffSeed]
+selectSeeds database year =  do
+    seeds <- database `process` (selectList [PlayoffSeedYear ==. (integerToInt (fst year))] [])
     return $ List.map entityVal seeds
 
 selectGamesForSeason :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Game]
@@ -144,3 +145,11 @@ selectEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season
 selectEvents database year season =  do
     events <- database `process` (selectList [EventYear ==. (integerToInt (fst year)), EventSeason ==. season] [])
     return $ List.map entityVal events
+
+selectGamesForSeries :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> String -> String -> m [Game]
+selectGamesForSeries database year topSeed bottomSeed = do
+    games <- database `process` (selectList ([GameYear ==. (integerToInt (fst year)), GameSeason ==. Playoffs, GameHomeId ==. topSeed, GameAwayId ==. bottomSeed] ||. [GameYear ==. (integerToInt (fst year)), GameSeason ==. Playoffs, GameHomeId ==. bottomSeed, GameAwayId ==. topSeed])[])
+    return $ List.map entityVal games
+
+updateGamesToInactive :: (MonadBaseControl IO m, MonadIO m) => Database -> [Game] -> m ()
+updateGamesToInactive db games = db `process` (updateWhere [GameGameId <-. (List.map gameGameId games), GameState ==. None] [GameActive =. False])

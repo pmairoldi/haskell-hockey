@@ -7,6 +7,7 @@
 
 import Hockey.Database hiding (port)
 import Hockey.Environment
+import Hockey.Types (Season(..))
 import Hockey.Formatting (formattedGame, formattedSeason, formattedYear, intToInteger, fromStrength, fromEventType, boolToInt)
 import Control.Monad.IO.Class
 import Yesod
@@ -17,7 +18,7 @@ instance ToJSON Period where
 
 -- Team
 instance ToJSON PlayoffSeed where
-    toJSON PlayoffSeed {..} = object [ "seasonID" .= ((formattedYear (intToInteger playoffSeedYear)) ++ (formattedSeason playoffSeedSeason)), "conference" .= playoffSeedConference, "seed" .= playoffSeedSeed, "homeID" .= playoffSeedHomeId, "awayID" .= playoffSeedAwayId, "round" .= playoffSeedRound ]
+    toJSON PlayoffSeed {..} = object [ "seasonID" .= ((formattedYear (intToInteger playoffSeedYear)) ++ (formattedSeason Playoffs)), "conference" .= playoffSeedConference, "seed" .= playoffSeedSeed, "homeID" .= playoffSeedHomeId, "awayID" .= playoffSeedAwayId, "round" .= playoffSeedRound ]
 
 -- Team
 instance ToJSON Game where
@@ -27,15 +28,15 @@ instance ToJSON Game where
 instance ToJSON Event where
     toJSON Event {..} = object [ "eventID" .= eventEventId, "gameID" .= eventGameId, "teamID" .= eventTeamId, "period" .= eventPeriod, "time" .= eventTime, "type" .= (fromEventType eventEventType), "description" .= eventDescription, "videoLink" .= eventVideoLink, "formalID" .= eventFormalId, "strength" .= (fromStrength eventStrength) ]
 
-data Playoffs = Playoffs {
+data PlayoffsResponse = PlayoffsResponse {
     periods :: [Period],
     seeds :: [PlayoffSeed],
     games :: [Game],
     events :: [Event]
 } deriving Show
 
-instance ToJSON Playoffs where
-    toJSON Playoffs {..} = object [ "periods" .= periods, "teams" .= seeds, "games" .= games, "events" .= events ]
+instance ToJSON PlayoffsResponse where
+    toJSON PlayoffsResponse {..} = object [ "periods" .= periods, "teams" .= seeds, "games" .= games, "events" .= events ]
 
 data App = App
 
@@ -49,11 +50,11 @@ getPlayoffsR :: Handler Value
 getPlayoffsR = liftIO $ do
     e <- env
     p <- selectPeriods (database e) (year e) (season e)
-    s <- selectSeeds (database e) (year e) (season e)
+    s <- selectSeeds (database e) (year e)
     g <- selectGamesForSeason (database e) (year e) (season e)
     e <- selectEvents (database e) (year e) (season e)
 
-    returnJson $ Playoffs p s g e
+    returnJson $ PlayoffsResponse p s g e
 
 main :: IO ()
 main = do

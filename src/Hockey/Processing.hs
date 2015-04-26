@@ -5,7 +5,10 @@ module Hockey.Processing (
     processGames,
     processEvents,
     processSeeds,
-    processPeriods
+    processPeriods,
+    processSeries,
+    getSeries,
+    filterSeries
 )
 
 where
@@ -117,7 +120,7 @@ getEvents (x:xs) = do
     return $ h ++ t
 
 dbSeed :: Seed -> DB.PlayoffSeed
-dbSeed seed = DB.PlayoffSeed (P.year seed) Playoffs (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed)
+dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed)
 
 getSeeds :: [Seed] -> [DB.PlayoffSeed]
 getSeeds seeds = List.map dbSeed seeds
@@ -146,6 +149,42 @@ getPeriods (x:xs) = do
     t <- getPeriods xs
     return $ h ++ t
 
+getSeries :: Database -> Year -> [DB.PlayoffSeed] -> IO [(DB.PlayoffSeed, [DB.Game])]
+getSeries db year [] = return []
+getSeries db year (x:xs) = do
+    h <- selectGamesForSeries db year (playoffSeedHomeId x) (playoffSeedAwayId x)
+    t <- getSeries db year xs
+    case h of
+        [] -> return $ t
+        otherwise -> return $ [(x, h)] ++ t
+
+compareTeamScore :: DB.Game -> String -> Bool
+compareTeamScore game team
+    | team == (gameHomeId game) = homeScore > awayScore
+    | team == (gameAwayId game) = awayScore > homeScore
+    | otherwise = False
+    where
+        homeScore = (gameHomeScore game)
+        awayScore = (gameAwayScore game)
+
+completedSeries :: (DB.PlayoffSeed, [DB.Game]) -> Maybe (String, (DB.PlayoffSeed, [DB.Game]))
+completedSeries series
+    | topTeamWins == 4 = Just (topTeam, series)
+    | bottomTeamWins == 4 = Just (bottomTeam, series)
+    | otherwise = Nothing
+    where
+        topTeamWins = List.foldl (\acc x -> if (compareTeamScore x (playoffSeedHomeId (fst series))) then acc + 1 else acc) 0 (snd series)
+        bottomTeamWins = List.foldl (\acc x -> if (compareTeamScore x (playoffSeedAwayId (fst series))) then acc + 1 else acc) 0 (snd series)
+        topTeam = (playoffSeedHomeId (fst series))
+        bottomTeam = (playoffSeedAwayId (fst series))
+
+filterSeries :: [(DB.PlayoffSeed, [DB.Game])] -> [(String, (DB.PlayoffSeed, [DB.Game]))]
+filterSeries [] = []
+filterSeries (x:xs) =
+    case (completedSeries x) of
+        Just (value) -> [value] ++ filterSeries xs
+        Nothing -> filterSeries xs
+
 -- exposed functions
 processTeams :: Database -> [T.Team] -> IO ()
 processTeams db teams = db `process` (upsertMany (getTeams teams))
@@ -153,7 +192,6 @@ processTeams db teams = db `process` (upsertMany (getTeams teams))
 processSeeds :: Database -> [Seed] -> IO ()
 processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 
--- insert time only if the state is none
 processGames :: Database -> [Day] -> IO ()
 processGames db xs = do
     values <- getGames db xs
@@ -168,3 +206,9 @@ processEvents :: Database -> [DB.Game] -> IO ()
 processEvents db xs = do
     values <- getEvents xs
     db `process` (upsertMany values)
+
+processSeries :: Database -> Year -> IO ()
+processSeries db year = do
+    seeds <- selectSeeds db year
+    series <- getSeries db year seeds
+    updateGamesToInactive db $ List.concat $ List.map (\x -> (snd x)) (List.map snd (filterSeries series))
