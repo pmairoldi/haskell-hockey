@@ -1,14 +1,7 @@
 module Hockey.Playoffs (
     Seed(..),
     seeds,
-    updateSeeds,
-
-    updateSeedsWithWildcards,
-    groupWinningSeeds,
-    winningTeamsToPlayoffSeed,
-    groupWinningTeams,
-    exractWinningTeam,
-    filterWinningSeed
+    updateSeeds
 )
 
 where
