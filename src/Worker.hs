@@ -51,7 +51,7 @@ run db s y dates = do
         Playoffs -> do
             logMsg "Processing Seeds" Debug
             processSeeds db (seeds y) -- get seeds from standings
-            processSeries db y
+            -- processSeries db y
 
     endTime <- getCurrentTime
 

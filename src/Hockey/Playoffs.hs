@@ -1,7 +1,14 @@
 module Hockey.Playoffs (
     Seed(..),
     seeds,
-    updateSeeds
+    updateSeeds,
+
+    updateSeedsWithWildcards,
+    groupWinningSeeds,
+    winningTeamsToPlayoffSeed,
+    groupWinningTeams,
+    exractWinningTeam,
+    filterWinningSeed
 )
 
 where
@@ -82,6 +89,7 @@ winningTeamsToPlayoffSeed teams year conference round series =
     case teams of
     (Just (x), Just (y)) -> [PlayoffSeed year conference round series (fst x) (fst y) (snd x) (snd y)]
     (Just (x), Nothing) -> [PlayoffSeed year conference round series (fst x) [] (snd x) 0]
+    (Nothing, Just (y)) -> [PlayoffSeed year conference round series [] (fst y) 0 (snd y)]
     otherwise -> []
 
 groupWinningSeeds :: [(String, PlayoffSeed)] -> Int -> String -> Int -> [Int] ->  [PlayoffSeed]
