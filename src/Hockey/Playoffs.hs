@@ -48,7 +48,7 @@ updateSeeds year winningSeeds
 -- 2013-2014 - Present format
 filterWinningSeed :: (String, PlayoffSeed) -> String -> Int -> [Int] -> Bool
 filterWinningSeed winningSeed conference round series
-    | (playoffSeedRound seed) == 3 &&  (playoffSeedSeries seed) `elem` series = True
+    | (playoffSeedRound seed) == 3 && (playoffSeedRound seed) == round && (playoffSeedSeries seed) `elem` series = True
     | (playoffSeedConference seed) == conference && (playoffSeedRound seed) == round && (playoffSeedSeries seed) `elem` series = True
     | otherwise = False
     where seed = (snd winningSeed)
