@@ -12,3 +12,7 @@ cabal.config
 .env
 
 *.aes
+
+.env-dev
+
+.env-prod
