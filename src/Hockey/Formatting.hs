@@ -51,13 +51,16 @@ module Hockey.Formatting (
     intToInteger,
     capitalized,
     shortYear,
-    boolToInt
+    boolToInt,
+    lastDay,
+    removeFullDateFormat
 ) where
 
 import Hockey.Types
 import Formatting
 import Data.Text.Lazy as LazyText
 import Data.Time.Calendar
+import Data.Time.Calendar.MonthDay
 import Data.Time.LocalTime
 import Data.Maybe
 import Data.List as List
@@ -99,6 +102,9 @@ shortYear year = (List.drop 2 (formattedYear (fst year))) ++ (List.drop 2 (forma
 fullDate :: Integer -> Integer -> Integer -> String
 fullDate year month day = (formattedYear year) ++ "-" ++ (formattedMonth month) ++ "-" ++ (formattedDay day)
 
+lastDay :: Integer -> Integer -> Integer
+lastDay year month = intToInteger $ monthLength (isLeapYear year) (integerToInt month)
+
 unpackToLower :: Text -> String
 unpackToLower v = LazyText.unpack (LazyText.toLower v)
 
@@ -123,13 +129,16 @@ integerToInt i = read (show i) :: Int
 intToInteger :: Int -> Integer
 intToInteger i = read (show i) :: Integer
 
+removeFullDateFormat :: Text -> Text
+removeFullDateFormat text = LazyText.pack $ List.head $ Split.splitOn "T" $ LazyText.unpack text
+
 dateStringToComponents :: Text -> [Int]
-dateStringToComponents text = List.map stringToInt $ Split.splitOn "/" $ LazyText.unpack text
+dateStringToComponents text = List.map stringToInt $ Split.splitOn "-" $ LazyText.unpack text
 
 unpackParseDate :: Text -> Day
 unpackParseDate text =
-    let components = dateStringToComponents text
-    in dateFromComponents (toInteger (components !! 2)) (components !! 0)  (components !! 1)
+    let components = dateStringToComponents $ removeFullDateFormat text
+    in dateFromComponents (toInteger (components !! 0)) (components !! 1)  (components !! 2)
 
 stringToLazyByteString :: String -> LazyByteString.ByteString
 stringToLazyByteString string = LazyByteString.fromStrict (ByteString.pack string)

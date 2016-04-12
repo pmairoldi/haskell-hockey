@@ -22,6 +22,7 @@ module Hockey.Types (
     ScoreboardData(..),
     Scoreboard(..),
     HomeAway(..),
+    DatesList(..),
     fromGameState,
     toGameState,
     fromSeason,
@@ -94,6 +95,10 @@ data GameDate = GameDate {
 
 data GameDates = GameDates {
     dates :: [GameDate]
+} deriving (Show, Generic)
+
+data DatesList = DatesList {
+  datesList :: [GameDates]
 } deriving (Show, Generic)
 
 -- convert strenth to type

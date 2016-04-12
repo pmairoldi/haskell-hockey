@@ -26,11 +26,15 @@ dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
 getTeams :: [T.Team] -> [DB.Team]
 getTeams teams = List.map dbTeam teams
 
+combineGameDates :: [T.GameDates] -> [T.GameDate]
+combineGameDates [] = []
+combineGameDates (x:xs) = (dates x) ++ (combineGameDates xs)
+
 fetchDates :: (Integer, Integer) -> IO [T.GameDate]
 fetchDates date = do
     results <- (getGameDates date)
     case results of
-        Just value -> return (dates value)
+        Just value -> return $ combineGameDates (datesList value)
         Nothing -> return []
 
 getDates :: [(Integer, Integer)] -> IO [T.GameDate]

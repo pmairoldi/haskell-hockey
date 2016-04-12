@@ -58,17 +58,21 @@ instance FromJSON GameDate where
     parseJSON _          = Applicative.empty
 
 parseGameDate v = GameDate <$>
-    fmap unpackParseDate (v .: "gd") <*>
-    fmap toSeason (v .: "gt") <*>
-    (v .: "n")
+    fmap unpackParseDate (v .: "gameDate") <*>
+    fmap seasonFromGameId (v .: "gamePk") <*>
+    (v .: "gamePk")
 
--- GameDates
-instance FromJSON GameDates where
-    parseJSON (Object v) = parseGameDates v
+-- DatesList
+
+instance FromJSON DatesList where
+    parseJSON (Object v) = DatesList <$> v .: "dates"
     parseJSON _          = Applicative.empty
 
-parseGameDates v = GameDates <$>
-    v .: "gameDates"
+-- GameDates
+
+instance FromJSON GameDates where
+    parseJSON (Object v) = GameDates <$> v .: "games"
+    parseJSON _          = Applicative.empty
 
 -- EventType
 instance FromJSON EventType
