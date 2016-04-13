@@ -120,7 +120,7 @@ selectTimeForGame :: (MonadBaseControl IO m, MonadIO m) => Database -> Int -> m 
 selectTimeForGame database gameId = do
     games <- database `process` (selectList [GameGameId ==. gameId] [LimitTo 1])
     case games of
-        [] -> return $ timeFromComponents 0 0 AM
+        [] -> return $ timeFromComponents 0 0
         (x:xs) -> return $ (gameTime (entityVal x))
 
 selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> [Day] -> m [Game]

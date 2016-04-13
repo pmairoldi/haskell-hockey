@@ -26,14 +26,18 @@ dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
 getTeams :: [T.Team] -> [DB.Team]
 getTeams teams = List.map dbTeam teams
 
-fetchDates :: (Integer, Integer) -> IO [T.GameDate]
+combineGameDates :: [T.GameDates] -> [T.Game]
+combineGameDates [] = []
+combineGameDates (x:xs) = (games x) ++ (combineGameDates xs)
+
+fetchDates :: (Integer, Integer) -> IO [T.Game]
 fetchDates date = do
     results <- (getGameDates date)
     case results of
-        Just value -> return (dates value)
+        Just value -> return $ combineGameDates (dates value)
         Nothing -> return []
 
-getDates :: [(Integer, Integer)] -> IO [T.GameDate]
+getDates :: [(Integer, Integer)] -> IO [T.Game]
 getDates [] = return []
 getDates (x:xs) = do
         h <- fetchDates x
@@ -43,34 +47,44 @@ getDates (x:xs) = do
 compareTimes :: TimeOfDay -> TimeOfDay -> TimeOfDay
 compareTimes currentTime fetchedTime
     | currentTime == fetchedTime = fetchedTime
-    | fetchedTime == (timeFromComponents 0 0 AM) = currentTime
+    | fetchedTime == (timeFromComponents 0 0) = currentTime
     | otherwise = fetchedTime
 
+getTeamId :: TeamInfo -> String
+getTeamId x = T.teamAbr $ T.team x
+
+getTeamScore :: ScoreInfo -> Int
+getTeamScore x = T.goals x
+
+getTeamShots :: ScoreInfo -> Int
+getTeamShots x = T.shots x
+
+-- FIXME: will have extra comma
+getBroadcastList :: [Broadcast] -> String
+getBroadcastList [] = ""
+getBroadcastList (x:xs) = (broadcastName x) ++ "," ++ (getBroadcastList xs)
+
 dbGame :: T.Game -> Day -> TimeOfDay -> (String, String) -> DB.Game
-dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) date time (joinStrings (caTV game) (usTV game)) (T.gameState game)  (T.gamePeriod game) (periodTime game) (awayScore game) (homeScore game) (awaySog game) (homeSog game) "" "" (fst videos) (snd videos) [] [] True
+dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date time (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (T.periodTime (T.linescore game)) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) "" "" (fst videos) (snd videos) [] [] True
 
-convertGames :: Database -> [T.Game] -> Day -> IO [DB.Game]
-convertGames _ [] _ = return $ []
-convertGames db (x:xs) d = do
+convertGames :: Database -> [T.Game] -> IO [DB.Game]
+convertGames _ [] = return $ []
+convertGames db (x:xs) = do
     time <- selectTimeForGame db (gameId x)
-    videos <- fetchVideos x d
-    convGames <- (convertGames db xs d)
+    videos <- fetchVideos x (gameDay (date x))
+    convGames <- (convertGames db xs)
 
-    return $ convGames ++ [(dbGame x d (compareTimes time $ T.gameTime x) videos)]
+    return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)) videos)]
 
-fetchGames :: Database -> Day -> IO [DB.Game]
-fetchGames db date = do
-    results <- (getResults date)
+fetchGames :: Database -> Day -> Day -> IO [DB.Game]
+fetchGames db from to = do
+    results <- (getResults from to)
     case results of
-        Just value -> (convertGames db (games value) (currentDate value))
+        Just value -> (convertGames db (combineGameDates (dates value)))
         Nothing -> return []
 
-getGames :: Database -> [Day] -> IO [DB.Game]
-getGames _ [] = return []
-getGames db (x:xs) = do
-        h <- fetchGames db x
-        t <- getGames db xs
-        return $ h ++ t
+getGames :: Database -> Day -> Day -> IO [DB.Game]
+getGames db from to = fetchGames db from to
 
 processLink :: Maybe String -> String
 processLink link = case link of
@@ -82,8 +96,8 @@ processYear game = (intToInteger (yearFromGameId (gameId game)), intToInteger (y
 
 fetchVideos :: T.Game -> Day -> IO (String, String)
 fetchVideos game date = do
-    homeHighlight <- getVideo date (processYear game) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) Home
-    awayHighlight <- getVideo date (processYear game) (seasonFromGameId (gameId game)) (gameId game) (T.awayId game) (T.homeId game) Away
+    homeHighlight <- getVideo date (processYear game) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) Home
+    awayHighlight <- getVideo date (processYear game) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) Away
 
     return $ ((processLink awayHighlight), (processLink homeHighlight))
 
@@ -126,7 +140,7 @@ getSeeds :: [Seed] -> [DB.PlayoffSeed]
 getSeeds seeds = List.map dbSeed seeds
 
 dbPeriod :: Int -> String -> Int -> PeriodData -> DB.Period
-dbPeriod gameId team period periodData = DB.Period  (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (shots periodData) (goals periodData)
+dbPeriod gameId team period periodData = DB.Period  (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (T.periodShots periodData) (T.periodGoals periodData)
 
 convertPeriods :: Int -> String -> Int -> [PeriodData] -> [DB.Period]
 convertPeriods gameId team period [] = []
@@ -193,9 +207,9 @@ processTeams db teams = db `process` (upsertMany (getTeams teams))
 processSeeds :: Database -> [Seed] -> IO ()
 processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 
-processGames :: Database -> [Day] -> IO ()
-processGames db xs = do
-    values <- getGames db xs
+processGames :: Database -> Day -> Day -> IO ()
+processGames db from to = do
+    values <- getGames db from to
     db `process` (upsertMany values)
 
 processPeriods :: Database -> [DB.Game] -> IO ()

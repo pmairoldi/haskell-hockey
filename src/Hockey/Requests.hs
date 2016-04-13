@@ -53,8 +53,8 @@ gameSummaryUrl :: Integer -> Season -> Integer -> (String, ReturnType)
 gameSummaryUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear year) ++ "/" ++ (fullGameId year season game) ++ "/gc/gcgs.jsonp", JSONP)
 
 -- year is date year
-resultsUrl :: Integer -> Integer -> Integer -> (String, ReturnType)
-resultsUrl year month day = ("http://live.nhl.com/GameData/GCScoreboard/" ++ (fullDate year month day) ++ ".jsonp", JSONP)
+resultsUrl :: Day -> Day -> (String, ReturnType)
+resultsUrl from to = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ (showGregorian from) ++ "&endDate=" ++ (showGregorian to) ++ "&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.scoringplays,schedule.game.seriesSummary,seriesSummary.series", JSON)
 
 -- year is season start year
 boxscoreHTMLUrl :: Integer -> Season -> Integer -> (String, ReturnType)
@@ -62,19 +62,17 @@ boxscoreHTMLUrl year season game = ("http://www.nhl.com/gamecenter/en/boxscore?i
 
 -- year is date year
 calendarUrl :: Integer -> Integer -> (String, ReturnType)
-calendarUrl year month = ("http://www.nhl.com/gamecenter/en/ajax/gamecalendarjson?year=" ++ (formattedYear year) ++ "&month=" ++ (formattedMonth month), JSON)
+calendarUrl year month = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ (fullDate year month 1) ++ "&endDate=" ++ (fullDate year month (lastDay year month)), JSON)
 
 -- HTTP Requests
 getResponse :: (String, ReturnType) -> IO String
 getResponse tuple = get (fst tuple) (snd tuple)
 
 -- Parsed Responses
-getResults :: Day -> IO (Maybe Results)
-getResults date =
-    let tripleDate = toGregorian date
-    in decodeResponse $ getResponse $ resultsUrl (year tripleDate) (month tripleDate) (day tripleDate)
+getResults :: Day -> Day -> IO (Maybe Results)
+getResults from to = decodeResponse $ getResponse $ resultsUrl from to
 
-getGameDates :: (Integer, Integer) -> IO (Maybe GameDates)
+getGameDates :: (Integer, Integer) -> IO (Maybe Results)
 getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
 
 getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)

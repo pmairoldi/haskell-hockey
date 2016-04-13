@@ -51,13 +51,22 @@ module Hockey.Formatting (
     intToInteger,
     capitalized,
     shortYear,
-    boolToInt
+    boolToInt,
+    lastDay,
+    removeFullDateFormat,
+    removeFullTimeFormat,
+    estTimeZone,
+    convertToEST,
+    days,
+    unpackParseDateTime,
+    unpackParseDateTime'
 ) where
 
 import Hockey.Types
 import Formatting
 import Data.Text.Lazy as LazyText
 import Data.Time.Calendar
+import Data.Time.Calendar.MonthDay
 import Data.Time.LocalTime
 import Data.Maybe
 import Data.List as List
@@ -99,6 +108,12 @@ shortYear year = (List.drop 2 (formattedYear (fst year))) ++ (List.drop 2 (forma
 fullDate :: Integer -> Integer -> Integer -> String
 fullDate year month day = (formattedYear year) ++ "-" ++ (formattedMonth month) ++ "-" ++ (formattedDay day)
 
+lastDay :: Integer -> Integer -> Integer
+lastDay year month = intToInteger $ monthLength (isLeapYear year) (integerToInt month)
+
+lastDay' :: Integer -> Integer -> Int
+lastDay' year month = monthLength (isLeapYear year) (integerToInt month)
+
 unpackToLower :: Text -> String
 unpackToLower v = LazyText.unpack (LazyText.toLower v)
 
@@ -108,6 +123,18 @@ stringToLower v = unpackToLower (LazyText.pack v)
 -- return 0000-00-00 if not good
 dateFromComponents :: Integer -> Int -> Int -> Day
 dateFromComponents year month day = fromJust $ fromGregorianValid year month day
+
+dateFromComponents' :: Integer -> Integer -> Int -> Day
+dateFromComponents' year month day = fromJust $ fromGregorianValid year (integerToInt month) day
+
+--FIXME change to EDT if the client times are off
+estTimeZone :: TimeZone
+estTimeZone = hoursToTimeZone (-5)
+
+convertToEST :: GameDateTime -> GameDateTime
+convertToEST dateTime = GameDateTime (addDays (fst offsetTime) (gameDay dateTime)) (snd offsetTime)
+  where
+    offsetTime = (utcToLocalTimeOfDay estTimeZone (gameTime dateTime))
 
 stringToInteger :: String -> Integer
 stringToInteger [] = 0
@@ -123,13 +150,22 @@ integerToInt i = read (show i) :: Int
 intToInteger :: Int -> Integer
 intToInteger i = read (show i) :: Integer
 
+removeFullDateFormat :: Text -> Text
+removeFullDateFormat text = LazyText.pack $ List.head $ Split.splitOn "T" $ LazyText.unpack text
+
 dateStringToComponents :: Text -> [Int]
-dateStringToComponents text = List.map stringToInt $ Split.splitOn "/" $ LazyText.unpack text
+dateStringToComponents text = List.map stringToInt $ Split.splitOn "-" $ LazyText.unpack text
+
+unpackParseDateTime :: Text -> GameDateTime
+unpackParseDateTime text = GameDateTime (unpackParseDate text) (unpackParseTime text)
+
+unpackParseDateTime' :: String -> GameDateTime
+unpackParseDateTime' text = GameDateTime (unpackParseDate $ LazyText.pack text) (unpackParseTime $ LazyText.pack text)
 
 unpackParseDate :: Text -> Day
 unpackParseDate text =
-    let components = dateStringToComponents text
-    in dateFromComponents (toInteger (components !! 2)) (components !! 0)  (components !! 1)
+    let components = dateStringToComponents $ removeFullDateFormat text
+    in dateFromComponents (toInteger (components !! 0)) (components !! 1)  (components !! 2)
 
 stringToLazyByteString :: String -> LazyByteString.ByteString
 stringToLazyByteString string = LazyByteString.fromStrict (ByteString.pack string)
@@ -142,13 +178,11 @@ offsetAMPMHour hour ampm
     | otherwise = hour
 
 -- return 00:00 if not good
-timeFromComponents :: Int -> Int -> AMPM -> TimeOfDay
-timeFromComponents hour minute ampm =
-    let offsetHour = offsetAMPMHour hour ampm
-    in fromJust $ makeTimeOfDayValid offsetHour minute 0
+timeFromComponents :: Int -> Int -> TimeOfDay
+timeFromComponents hour minute = fromJust $ makeTimeOfDayValid hour minute 0
 
 timeStringToComponents :: Text -> [Int]
-timeStringToComponents text = List.map stringToInt $ Split.splitOn ":" $ LazyText.unpack $ LazyText.takeWhile (/= ' ') text
+timeStringToComponents text = List.map stringToInt $ Split.splitOn ":" $ LazyText.unpack $ LazyText.takeWhile (/= 'Z') text
 
 parseAMPM :: Text -> AMPM
 parseAMPM text
@@ -162,13 +196,13 @@ stringContainsAMPM text = or $ [("AM" `List.isSuffixOf` text), ("PM" `List.isSuf
 textContainsAMPM :: Text -> Bool
 textContainsAMPM text = or $ [((LazyText.pack "AM") `LazyText.isSuffixOf` text), ((LazyText.pack "PM") `LazyText.isSuffixOf` text)]
 
+removeFullTimeFormat :: Text -> Text
+removeFullTimeFormat text = LazyText.pack $ List.head $ List.reverse $ Split.splitOn "T" $ LazyText.unpack text
+
 unpackParseTime :: Text -> TimeOfDay
-unpackParseTime text
-    | textContainsAMPM text =
-    let components = timeStringToComponents text
-        ampm = parseAMPM text
-    in timeFromComponents (components !! 0)  (components !! 1) ampm
-    | otherwise = timeFromComponents 0 0 AM
+unpackParseTime text =
+    let components = timeStringToComponents (removeFullTimeFormat text)
+    in timeFromComponents (components !! 0)  (components !! 1)
 
 capitalized :: String -> String
 capitalized [] = []
@@ -216,7 +250,7 @@ periodFromPeriodString :: String -> Int
 periodFromPeriodString t = periodFromPeriodTime (removeGameTime t)
 
 -- Stupid NHL returning "" in their json when it is a number
-valueToInteger :: Maybe Value -> Int
+valueToInteger :: Maybe Value -> Integer
 valueToInteger (Just (Number n)) = fromInteger (coefficient n)
 valueToInteger _ = 0
 
@@ -253,7 +287,7 @@ cmpTeam x y = case y of
     t -> (stringToLower x) == (stringToLower (abr t)) || (stringToLower x) == (stringToLower (city t)) || (stringToLower x) == (stringToLower (name t))
 
 teamFromName :: String -> Maybe Team
-teamFromName name = case List.filter (\x -> cmpTeam name x) teams of
+teamFromName name = case List.filter (\x -> cmpTeam name x) teamList of
     [x] -> Just x
     otherwise -> Nothing
 
@@ -276,10 +310,24 @@ months Preseason years= preseasonMonths years
 months Season years = seasonMonths years
 months Playoffs years = playoffMonths years
 
+startDay :: Year -> Day
+startDay year = dateFromComponents' (fst year) (snd year) 1
+
+endDay :: Year -> Day
+endDay year = dateFromComponents' (fst year) (snd year) (lastDay' (fst year) (snd year))
+
+startAndEndDay :: [Year] -> (Day, Day)
+startAndEndDay months = (startDay $ List.head months, endDay $ List.head (List.reverse months))
+
+days :: Season -> Year -> (Day, Day)
+days Preseason years = startAndEndDay $ preseasonMonths years
+days Season years = startAndEndDay $ seasonMonths years
+days Playoffs years = startAndEndDay $ playoffMonths years
+
 seasonYears :: Integer -> Year
 seasonYears year = (year, year + 1)
 
-cmpSeason :: GameDate -> Season -> Bool
+cmpSeason :: Game -> Season -> Bool
 cmpSeason x s = (season x) == s
 
 boolToInt :: Bool -> Int
