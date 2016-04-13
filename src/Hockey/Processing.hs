@@ -19,7 +19,6 @@ import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
 import Hockey.Playoffs as P
-import Debug.Trace
 
 dbTeam :: T.Team -> DB.Team
 dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
@@ -72,10 +71,10 @@ convertGames :: Database -> [T.Game] -> IO [DB.Game]
 convertGames _ [] = return $ []
 convertGames db (x:xs) = do
     time <- selectTimeForGame db (gameId x)
-    videos <- fetchVideos x (date x)
+    videos <- fetchVideos x (gameDay (date x))
     convGames <- (convertGames db xs)
 
-    return $ convGames ++ [(dbGame x (date x) (compareTimes time $ T.gameTime x) videos)]
+    return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)) videos)]
 
 fetchGames :: Database -> Day -> Day -> IO [DB.Game]
 fetchGames db from to = do
@@ -211,8 +210,6 @@ processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 processGames :: Database -> Day -> Day -> IO ()
 processGames db from to = do
     values <- getGames db from to
-    traceM $ "dates: " ++ show from ++ " " ++ show to
-    traceM $ "games: " ++ show values
     db `process` (upsertMany values)
 
 processPeriods :: Database -> [DB.Game] -> IO ()

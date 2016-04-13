@@ -20,6 +20,7 @@ module Hockey.Types (
     ScoreTeams(..),
     Linescore(..),
     State(..),
+    GameDateTime(..),
     Game(..),
     GameDates(..),
     Results(..),
@@ -121,9 +122,13 @@ data State = State {
     gameState :: GameState
 } deriving (Show, Generic)
 
+data GameDateTime = GameDateTime {
+    gameDay :: Day,
+    gameTime :: TimeOfDay
+} deriving (Show, Generic)
+
 data Game = Game {
-    date :: Day,
-    gameTime :: TimeOfDay,
+    date :: GameDateTime,
     season :: Season,
     gameId :: Int,
     teams :: Teams,

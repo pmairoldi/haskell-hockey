@@ -5,7 +5,6 @@ import Hockey.Playoffs hiding (year)
 import System.Environment (getArgs)
 import Data.List as List
 import Data.Time hiding (months)
-import Debug.Trace
 
 currentDay :: IO Day
 currentDay = do

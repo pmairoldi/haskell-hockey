@@ -9,6 +9,7 @@ import Hockey.Formatting
 import Data.Aeson
 import Control.Applicative as Applicative
 import Hockey.Types
+import Data.Text
 
 decodeResponse :: (FromJSON a) => IO String -> IO (Maybe a)
 decodeResponse response = do
@@ -91,23 +92,26 @@ instance FromJSON State where
         fmap toGameState (fmap valueToInteger (v .: "statusCode"))
     parseJSON _          = Applicative.empty
 
+-- GameDateTime
+instance FromJSON GameDateTime where
+    parseJSON (String v) = return $ convertToEST (unpackParseDateTime' $ unpack v)
+    parseJSON _          = Applicative.empty
+
 -- Game
 instance FromJSON Game where
     parseJSON (Object v) = Game <$>
-        fmap unpackParseDate (v .: "gameDate") <*>
-        fmap convertToEST (fmap unpackParseTime (v .: "gameDate")) <*>
+        (v .: "gameDate") <*>
         fmap seasonFromGameId (v .: "gamePk") <*>
         (v .: "gamePk") <*>
         (v .: "teams") <*>
-        (v .: "broadcasts") <*>
+        (v .:? "broadcasts" .!= []) <*>
         (v .: "linescore") <*>
         (v .: "status")
     parseJSON _          = Applicative.empty
 
 -- Results
 instance FromJSON Results where
-    parseJSON (Object v) = Results <$>
-        (v .: "dates")
+    parseJSON (Object v) =  do Results <$> (v .: "dates")
     parseJSON _          = Applicative.empty
 
 -- GameDates

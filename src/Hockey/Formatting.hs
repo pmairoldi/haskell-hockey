@@ -57,7 +57,9 @@ module Hockey.Formatting (
     removeFullTimeFormat,
     estTimeZone,
     convertToEST,
-    days
+    days,
+    unpackParseDateTime,
+    unpackParseDateTime'
 ) where
 
 import Hockey.Types
@@ -129,8 +131,10 @@ dateFromComponents' year month day = fromJust $ fromGregorianValid year (integer
 estTimeZone :: TimeZone
 estTimeZone = hoursToTimeZone (-5)
 
-convertToEST :: TimeOfDay -> TimeOfDay
-convertToEST time = snd (utcToLocalTimeOfDay estTimeZone time)
+convertToEST :: GameDateTime -> GameDateTime
+convertToEST dateTime = GameDateTime (addDays (fst offsetTime) (gameDay dateTime)) (snd offsetTime)
+  where
+    offsetTime = (utcToLocalTimeOfDay estTimeZone (gameTime dateTime))
 
 stringToInteger :: String -> Integer
 stringToInteger [] = 0
@@ -151,6 +155,12 @@ removeFullDateFormat text = LazyText.pack $ List.head $ Split.splitOn "T" $ Lazy
 
 dateStringToComponents :: Text -> [Int]
 dateStringToComponents text = List.map stringToInt $ Split.splitOn "-" $ LazyText.unpack text
+
+unpackParseDateTime :: Text -> GameDateTime
+unpackParseDateTime text = GameDateTime (unpackParseDate text) (unpackParseTime text)
+
+unpackParseDateTime' :: String -> GameDateTime
+unpackParseDateTime' text = GameDateTime (unpackParseDate $ LazyText.pack text) (unpackParseTime $ LazyText.pack text)
 
 unpackParseDate :: Text -> Day
 unpackParseDate text =
