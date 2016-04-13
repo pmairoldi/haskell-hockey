@@ -32,13 +32,13 @@ logMsg msg loggingType = do
 
 run :: Database -> Season -> Year -> [Day] -> IO ()
 run db s y dates = do
-    migrate db
 
     startTime <- getCurrentTime
 
     logMsg "Processing Games" Debug
     processGames db dates
 
+    logMsg "Fetch Games" Debug
     games <- selectGames db dates
 
     logMsg "Processing Periods" Debug
@@ -74,10 +74,12 @@ main = do
     let y = (year e)
     let r = intToInteger (range e)
 
+    migrate db
+
     case isBootStrap args of
         True -> do
             logMsg "Processing Teams" Debug
-            processTeams db teams
+            processTeams db teamList
 
             logMsg "Processing Series" Debug
             processSeries db y

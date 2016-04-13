@@ -1,5 +1,5 @@
 module Hockey.Teams (
-    teams,
+    teamList,
     ducks,
     bruins,
     sabres,
@@ -130,5 +130,5 @@ jets = Team "wpg" "Winnipeg" "Jets"
 thrashers :: Team
 thrashers = Team "atl" "Atlanta" "Thrashers"
 
-teams :: [Team]
-teams = [ducks, bruins, sabres, flames, hurricanes, blackhawks, avalanche, blueJackets, stars, redWings, oilers, panthers, kings, wild, canadiens, predators, devils, islanders, rangers, senators, flyers, coyotes, penguins, sharks, blues, lightning, mapleLeafs, canucks, capitals, jets, thrashers]
+teamList :: [Team]
+teamList = [ducks, bruins, sabres, flames, hurricanes, blackhawks, avalanche, blueJackets, stars, redWings, oilers, panthers, kings, wild, canadiens, predators, devils, islanders, rangers, senators, flyers, coyotes, penguins, sharks, blues, lightning, mapleLeafs, canucks, capitals, jets, thrashers]

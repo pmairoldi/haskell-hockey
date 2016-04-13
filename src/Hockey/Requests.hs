@@ -54,7 +54,7 @@ gameSummaryUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear 
 
 -- year is date year
 resultsUrl :: Integer -> Integer -> Integer -> (String, ReturnType)
-resultsUrl year month day = ("http://live.nhl.com/GameData/GCScoreboard/" ++ (fullDate year month day) ++ ".jsonp", JSONP)
+resultsUrl year month day = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ (fullDate year month day) ++ "&endDate=" ++ (fullDate year month day) ++ "&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.scoringplays,schedule.game.seriesSummary,seriesSummary.series", JSON)
 
 -- year is season start year
 boxscoreHTMLUrl :: Integer -> Season -> Integer -> (String, ReturnType)
@@ -74,7 +74,7 @@ getResults date =
     let tripleDate = toGregorian date
     in decodeResponse $ getResponse $ resultsUrl (year tripleDate) (month tripleDate) (day tripleDate)
 
-getGameDates :: (Integer, Integer) -> IO (Maybe DatesList)
+getGameDates :: (Integer, Integer) -> IO (Maybe Results)
 getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
 
 getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)

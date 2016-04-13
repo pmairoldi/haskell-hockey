@@ -2,27 +2,34 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Hockey.Types (
+    Year(..),
+    Team(..),
+    HomeAway(..),
     AMPM(..),
     Season(..),
-    Game(..),
-    Results(..),
     GameState(..),
-    GameDate(..),
-    GameDates(..),
+    Strength(..),
     EventType(..),
+    TeamData(..),
+    TeamInfo(..),
+    Teams(..),
+    Broadcast(..),
+    PeriodData(..),
+    Period(..),
+    ScoreInfo(..),
+    ScoreTeams(..),
+    Linescore(..),
+    State(..),
+    Game(..),
+    GameDates(..),
+    Results(..),
     Event(..),
     EventPlays(..),
     EventGame(..),
     EventData(..),
     GameEvents(..),
-    Strength(..),
-    Year(..),
-    Team(..),
-    PeriodData(..),
     ScoreboardData(..),
     Scoreboard(..),
-    HomeAway(..),
-    DatesList(..),
     fromGameState,
     toGameState,
     fromSeason,
@@ -64,41 +71,73 @@ derivePersistField "Strength"
 data EventType = Unknown | Shot | Hit | Penalty | Goal | Fight deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "EventType"
 
-data Game = Game {
-    gameId :: Int,
-    awayId :: String,
-    homeId :: String,
-    caTV :: String,
-    usTV :: String,
-    gameState :: GameState,
-    awayScore :: Int,
-    homeScore :: Int,
-    awaySog :: Int,
-    homeSog :: Int,
-    gameTime :: TimeOfDay,
+data TeamData = TeamData {
+    teamAbr :: String
+} deriving (Show, Generic)
+
+data TeamInfo = TeamInfo {
+    team :: TeamData
+} deriving (Show, Generic)
+
+data Teams = Teams {
+    awayInfo :: TeamInfo,
+    homeInfo :: TeamInfo
+} deriving (Show, Generic)
+
+data Broadcast = Broadcast {
+    broadcastName :: String
+} deriving (Show, Generic)
+
+data PeriodData = PeriodData {
+    periodGoals :: Int,
+    periodShots :: Int
+} deriving (Show, Generic)
+
+data Period = Period {
+    periodId :: Int,
+    homePeriod :: PeriodData,
+    awayPeriod :: PeriodData
+} deriving (Show, Generic)
+
+data ScoreInfo = ScoreInfo {
+    goals :: Int,
+    shots :: Int,
+    powerplay :: Bool
+} deriving (Show, Generic)
+
+data ScoreTeams = ScoreTeams {
+    homeTeam :: ScoreInfo,
+    awayTeam :: ScoreInfo
+} deriving (Show, Generic)
+
+data Linescore = Linescore {
+    gamePeriods :: [Period],
+    gamePeriod :: Int,
     periodTime :: String,
-    gamePeriod :: Int
+    scoreTeams :: ScoreTeams
 } deriving (Show, Generic)
 
-data Results = Results {
-    games :: [Game],
-    currentDate :: Day,
-    nextDate :: Day,
-    prevDate :: Day
+data State = State {
+    gameState :: GameState
 } deriving (Show, Generic)
 
-data GameDate = GameDate {
+data Game = Game {
     date :: Day,
+    gameTime :: TimeOfDay,
     season :: Season,
-    gameNumber :: Int
+    gameId :: Int,
+    teams :: Teams,
+    broadcasts :: [Broadcast],
+    linescore :: Linescore,
+    status :: State
 } deriving (Show, Generic)
 
 data GameDates = GameDates {
-    dates :: [GameDate]
+    games :: [Game]
 } deriving (Show, Generic)
 
-data DatesList = DatesList {
-  datesList :: [GameDates]
+data Results = Results {
+    dates :: [GameDates]
 } deriving (Show, Generic)
 
 -- convert strenth to type
@@ -131,11 +170,6 @@ data EventData = EventData {
 
 data GameEvents = GameEvents {
     eventData :: EventData
-} deriving (Show, Generic)
-
-data PeriodData = PeriodData {
-    goals :: Int,
-    shots :: Int
 } deriving (Show, Generic)
 
 data ScoreboardData = ScoreboardData {
@@ -171,7 +205,8 @@ toGameState 1 = None
 toGameState 2 = Before
 toGameState 3 = Ongoing
 toGameState 4 = Overtime
-toGameState 5 = Final
+toGameState 7 = Final
+toGameState _ = None
 
 fromEventType :: EventType -> String
 fromEventType Shot = "shot"

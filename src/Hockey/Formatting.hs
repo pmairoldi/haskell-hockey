@@ -53,7 +53,10 @@ module Hockey.Formatting (
     shortYear,
     boolToInt,
     lastDay,
-    removeFullDateFormat
+    removeFullDateFormat,
+    removeFullTimeFormat,
+    estTimeZone,
+    convertToEST
 ) where
 
 import Hockey.Types
@@ -115,6 +118,13 @@ stringToLower v = unpackToLower (LazyText.pack v)
 dateFromComponents :: Integer -> Int -> Int -> Day
 dateFromComponents year month day = fromJust $ fromGregorianValid year month day
 
+--FIXME change to EDT if the client times are off
+estTimeZone :: TimeZone
+estTimeZone = hoursToTimeZone (-5)
+
+convertToEST :: TimeOfDay -> TimeOfDay
+convertToEST time = snd (utcToLocalTimeOfDay estTimeZone time)
+
 stringToInteger :: String -> Integer
 stringToInteger [] = 0
 stringToInteger s = read s :: Integer
@@ -151,13 +161,11 @@ offsetAMPMHour hour ampm
     | otherwise = hour
 
 -- return 00:00 if not good
-timeFromComponents :: Int -> Int -> AMPM -> TimeOfDay
-timeFromComponents hour minute ampm =
-    let offsetHour = offsetAMPMHour hour ampm
-    in fromJust $ makeTimeOfDayValid offsetHour minute 0
+timeFromComponents :: Int -> Int -> TimeOfDay
+timeFromComponents hour minute = fromJust $ makeTimeOfDayValid hour minute 0
 
 timeStringToComponents :: Text -> [Int]
-timeStringToComponents text = List.map stringToInt $ Split.splitOn ":" $ LazyText.unpack $ LazyText.takeWhile (/= ' ') text
+timeStringToComponents text = List.map stringToInt $ Split.splitOn ":" $ LazyText.unpack $ LazyText.takeWhile (/= 'Z') text
 
 parseAMPM :: Text -> AMPM
 parseAMPM text
@@ -171,13 +179,13 @@ stringContainsAMPM text = or $ [("AM" `List.isSuffixOf` text), ("PM" `List.isSuf
 textContainsAMPM :: Text -> Bool
 textContainsAMPM text = or $ [((LazyText.pack "AM") `LazyText.isSuffixOf` text), ((LazyText.pack "PM") `LazyText.isSuffixOf` text)]
 
+removeFullTimeFormat :: Text -> Text
+removeFullTimeFormat text = LazyText.pack $ List.head $ List.reverse $ Split.splitOn "T" $ LazyText.unpack text
+
 unpackParseTime :: Text -> TimeOfDay
-unpackParseTime text
-    | textContainsAMPM text =
-    let components = timeStringToComponents text
-        ampm = parseAMPM text
-    in timeFromComponents (components !! 0)  (components !! 1) ampm
-    | otherwise = timeFromComponents 0 0 AM
+unpackParseTime text =
+    let components = timeStringToComponents (removeFullTimeFormat text)
+    in timeFromComponents (components !! 0)  (components !! 1)
 
 capitalized :: String -> String
 capitalized [] = []
@@ -225,7 +233,7 @@ periodFromPeriodString :: String -> Int
 periodFromPeriodString t = periodFromPeriodTime (removeGameTime t)
 
 -- Stupid NHL returning "" in their json when it is a number
-valueToInteger :: Maybe Value -> Int
+valueToInteger :: Maybe Value -> Integer
 valueToInteger (Just (Number n)) = fromInteger (coefficient n)
 valueToInteger _ = 0
 
@@ -262,7 +270,7 @@ cmpTeam x y = case y of
     t -> (stringToLower x) == (stringToLower (abr t)) || (stringToLower x) == (stringToLower (city t)) || (stringToLower x) == (stringToLower (name t))
 
 teamFromName :: String -> Maybe Team
-teamFromName name = case List.filter (\x -> cmpTeam name x) teams of
+teamFromName name = case List.filter (\x -> cmpTeam name x) teamList of
     [x] -> Just x
     otherwise -> Nothing
 
@@ -288,7 +296,7 @@ months Playoffs years = playoffMonths years
 seasonYears :: Integer -> Year
 seasonYears year = (year, year + 1)
 
-cmpSeason :: GameDate -> Season -> Bool
+cmpSeason :: Game -> Season -> Bool
 cmpSeason x s = (season x) == s
 
 boolToInt :: Bool -> Int

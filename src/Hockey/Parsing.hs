@@ -21,57 +21,99 @@ instance FromJSON Season
 -- GameState
 instance FromJSON GameState
 
--- Game
-instance FromJSON Game where
-    parseJSON (Object v) = parseGame v
+-- TeamData
+instance FromJSON TeamData where
+    parseJSON (Object v) = TeamData <$>
+        fmap unpackToLower (v .: "abbreviation")
     parseJSON _          = Applicative.empty
 
-parseGame v = Game <$>
-    v .: "id" <*>
-    fmap unpackToLower (v .: "ata") <*>
-    fmap unpackToLower (v .: "hta") <*>
-    fmap splitAndJoin (v .: "canationalbroadcasts") <*>
-    fmap splitAndJoin (v .: "usnationalbroadcasts") <*>
-    fmap toGameState (v .:"gs") <*>
-    fmap valueToInteger (v .: "ats") <*>
-    fmap valueToInteger (v .: "hts") <*>
-    fmap valueToInteger (v .:? "atsog") <*>
-    fmap valueToInteger (v .:? "htsog") <*>
-    fmap unpackParseTime (v .: "bs") <*>
-    fmap removeGameTimeAndPeriod (v .: "bs") <*>
-    fmap periodFromPeriodString (v .: "bs")
+-- TeamInfo
+instance FromJSON TeamInfo where
+    parseJSON (Object v) = TeamInfo <$>
+        (v .: "team")
+    parseJSON _          = Applicative.empty
+
+-- Teams
+instance FromJSON Teams where
+    parseJSON (Object v) = Teams <$>
+      (v .: "away") <*>
+      (v .: "home")
+    parseJSON _          = Applicative.empty
+
+-- Broadcast
+instance FromJSON Broadcast where
+    parseJSON (Object v) = Broadcast <$>
+        (v .: "name")
+    parseJSON _          = Applicative.empty
+
+-- PeriodData
+instance FromJSON PeriodData where
+    parseJSON (Object v) = PeriodData <$>
+        (v .: "goals") <*>
+        (v .: "shotsOnGoal")
+    parseJSON _          = Applicative.empty
+
+-- Period
+instance FromJSON Period where
+    parseJSON (Object v) = Period <$>
+        (v .: "num") <*>
+        (v .: "home") <*>
+        (v .: "away")
+    parseJSON _          = Applicative.empty
+
+-- ScoreInfo
+instance FromJSON ScoreInfo where
+    parseJSON (Object v) = ScoreInfo <$>
+        (v .: "goals") <*>
+        (v .: "shotsOnGoal") <*>
+        (v .: "powerPlay")
+    parseJSON _          = Applicative.empty
+
+-- ScoreTeams
+instance FromJSON ScoreTeams where
+    parseJSON (Object v) = ScoreTeams <$>
+        (v .: "home") <*>
+        (v .: "away")
+    parseJSON _          = Applicative.empty
+
+-- Linescore
+instance FromJSON Linescore where
+    parseJSON (Object v) = Linescore <$>
+        (v .: "periods") <*>
+        (v .: "currentPeriod") <*>
+        (v .:? "currentPeriodTimeRemaining" .!= "20:00") <*>
+        (v .: "teams")
+    parseJSON _          = Applicative.empty
+
+-- State
+instance FromJSON State where
+    parseJSON (Object v) = State <$>
+        fmap toGameState (fmap valueToInteger (v .: "statusCode"))
+    parseJSON _          = Applicative.empty
+
+-- Game
+instance FromJSON Game where
+    parseJSON (Object v) = Game <$>
+        fmap unpackParseDate (v .: "gameDate") <*>
+        fmap convertToEST (fmap unpackParseTime (v .: "gameDate")) <*>
+        fmap seasonFromGameId (v .: "gamePk") <*>
+        (v .: "gamePk") <*>
+        (v .: "teams") <*>
+        (v .: "broadcasts") <*>
+        (v .: "linescore") <*>
+        (v .: "status")
+    parseJSON _          = Applicative.empty
 
 -- Results
 instance FromJSON Results where
-    parseJSON (Object v) = parseResults v
-    parseJSON _          = Applicative.empty
-
-parseResults v = Results <$>
-    v .: "games" <*>
-    fmap unpackParseDate (v .: "currentDate") <*>
-    fmap unpackParseDate (v .: "nextDate") <*>
-    fmap unpackParseDate (v .: "prevDate")
-
--- GameDate
-instance FromJSON GameDate where
-    parseJSON (Object v) = parseGameDate v
-    parseJSON _          = Applicative.empty
-
-parseGameDate v = GameDate <$>
-    fmap unpackParseDate (v .: "gameDate") <*>
-    fmap seasonFromGameId (v .: "gamePk") <*>
-    (v .: "gamePk")
-
--- DatesList
-
-instance FromJSON DatesList where
-    parseJSON (Object v) = DatesList <$> v .: "dates"
+    parseJSON (Object v) = Results <$>
+        (v .: "dates")
     parseJSON _          = Applicative.empty
 
 -- GameDates
-
 instance FromJSON GameDates where
-    parseJSON (Object v) = GameDates <$> v .: "games"
+    parseJSON (Object v) = GameDates <$>
+        (v .: "games")
     parseJSON _          = Applicative.empty
 
 -- EventType
@@ -130,15 +172,6 @@ instance FromJSON GameEvents where
 
 parseGameEvents v = GameEvents <$>
     v .: "data"
-
--- PeriodData
-instance FromJSON PeriodData where
-    parseJSON (Object v) = parsePeriodData v
-    parseJSON _          = Applicative.empty
-
-parsePeriodData v = PeriodData <$>
-        v .: "g" <*>
-        v .: "s"
 
 instance FromJSON ScoreboardData where
     parseJSON (Object v) = parseScoreboardData v
