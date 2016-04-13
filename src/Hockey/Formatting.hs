@@ -56,7 +56,8 @@ module Hockey.Formatting (
     removeFullDateFormat,
     removeFullTimeFormat,
     estTimeZone,
-    convertToEST
+    convertToEST,
+    days
 ) where
 
 import Hockey.Types
@@ -108,6 +109,9 @@ fullDate year month day = (formattedYear year) ++ "-" ++ (formattedMonth month) 
 lastDay :: Integer -> Integer -> Integer
 lastDay year month = intToInteger $ monthLength (isLeapYear year) (integerToInt month)
 
+lastDay' :: Integer -> Integer -> Int
+lastDay' year month = monthLength (isLeapYear year) (integerToInt month)
+
 unpackToLower :: Text -> String
 unpackToLower v = LazyText.unpack (LazyText.toLower v)
 
@@ -117,6 +121,9 @@ stringToLower v = unpackToLower (LazyText.pack v)
 -- return 0000-00-00 if not good
 dateFromComponents :: Integer -> Int -> Int -> Day
 dateFromComponents year month day = fromJust $ fromGregorianValid year month day
+
+dateFromComponents' :: Integer -> Integer -> Int -> Day
+dateFromComponents' year month day = fromJust $ fromGregorianValid year (integerToInt month) day
 
 --FIXME change to EDT if the client times are off
 estTimeZone :: TimeZone
@@ -292,6 +299,20 @@ months :: Season -> Year -> [Year]
 months Preseason years= preseasonMonths years
 months Season years = seasonMonths years
 months Playoffs years = playoffMonths years
+
+startDay :: Year -> Day
+startDay year = dateFromComponents' (fst year) (snd year) 1
+
+endDay :: Year -> Day
+endDay year = dateFromComponents' (fst year) (snd year) (lastDay' (fst year) (snd year))
+
+startAndEndDay :: [Year] -> (Day, Day)
+startAndEndDay months = (startDay $ List.head months, endDay $ List.head (List.reverse months))
+
+days :: Season -> Year -> (Day, Day)
+days Preseason years = startAndEndDay $ preseasonMonths years
+days Season years = startAndEndDay $ seasonMonths years
+days Playoffs years = startAndEndDay $ playoffMonths years
 
 seasonYears :: Integer -> Year
 seasonYears year = (year, year + 1)

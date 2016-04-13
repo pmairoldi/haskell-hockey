@@ -5,21 +5,18 @@ import Hockey.Playoffs hiding (year)
 import System.Environment (getArgs)
 import Data.List as List
 import Data.Time hiding (months)
+import Debug.Trace
 
 currentDay :: IO Day
 currentDay = do
     c <- getCurrentTime
     return $ utctDay c
 
-dates :: Season -> Year -> Day -> Integer -> IO [Day]
-dates s y day range = do
-    dates <- getDates (months s y) -- split months if this is too long
-    return $ filter (\x -> x >= (addDays (-range) day) && x <= (addDays range day)) (List.map date (filter (\x -> (x `cmpSeason` s)) dates))
+dates :: Season -> Year -> Day -> Integer -> IO (Day, Day)
+dates s y day range = return $ (addDays (-range) day, addDays (range) day)
 
-bootstrap :: Season -> Year -> IO [Day]
-bootstrap s y= do
-    dates <- getDates (months s y)
-    return $ List.map date (filter (\x -> x `cmpSeason` s) dates)
+bootstrap :: Season -> Year -> IO (Day, Day)
+bootstrap s y = return $ days s y
 
 logMsg :: Show a => a -> LoggingType -> IO ()
 logMsg msg loggingType = do
@@ -30,16 +27,18 @@ logMsg msg loggingType = do
         (Info, Info) -> print msg
         otherwise -> return ()
 
-run :: Database -> Season -> Year -> [Day] -> IO ()
+run :: Database -> Season -> Year -> (Day, Day) -> IO ()
 run db s y dates = do
 
     startTime <- getCurrentTime
 
     logMsg "Processing Games" Debug
-    processGames db dates
+    processGames db (fst dates) (snd dates)
+
+    let range = [(fst dates), (snd dates)]
 
     logMsg "Fetch Games" Debug
-    games <- selectGames db dates
+    games <- selectGames db range
 
     logMsg "Processing Periods" Debug
     processPeriods db games

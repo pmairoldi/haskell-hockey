@@ -19,6 +19,7 @@ import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
 import Hockey.Playoffs as P
+import Debug.Trace
 
 dbTeam :: T.Team -> DB.Team
 dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
@@ -76,19 +77,15 @@ convertGames db (x:xs) = do
 
     return $ convGames ++ [(dbGame x (date x) (compareTimes time $ T.gameTime x) videos)]
 
-fetchGames :: Database -> Day -> IO [DB.Game]
-fetchGames db date = do
-    results <- (getResults date)
+fetchGames :: Database -> Day -> Day -> IO [DB.Game]
+fetchGames db from to = do
+    results <- (getResults from to)
     case results of
         Just value -> (convertGames db (combineGameDates (dates value)))
         Nothing -> return []
 
-getGames :: Database -> [Day] -> IO [DB.Game]
-getGames _ [] = return []
-getGames db (x:xs) = do
-        h <- fetchGames db x
-        t <- getGames db xs
-        return $ h ++ t
+getGames :: Database -> Day -> Day -> IO [DB.Game]
+getGames db from to = fetchGames db from to
 
 processLink :: Maybe String -> String
 processLink link = case link of
@@ -211,9 +208,11 @@ processTeams db teams = db `process` (upsertMany (getTeams teams))
 processSeeds :: Database -> [Seed] -> IO ()
 processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 
-processGames :: Database -> [Day] -> IO ()
-processGames db xs = do
-    values <- getGames db xs
+processGames :: Database -> Day -> Day -> IO ()
+processGames db from to = do
+    values <- getGames db from to
+    traceM $ "dates: " ++ show from ++ " " ++ show to
+    traceM $ "games: " ++ show values
     db `process` (upsertMany values)
 
 processPeriods :: Database -> [DB.Game] -> IO ()
