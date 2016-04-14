@@ -75,6 +75,7 @@ getResults from to = decodeResponse $ getResponse $ resultsUrl from to
 getGameDates :: (Integer, Integer) -> IO (Maybe Results)
 getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
 
+--TODO: move to new api
 getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)
 getGameEvents year season game = decodeResponse $ getResponse $ playByPlayUrl year season game
 

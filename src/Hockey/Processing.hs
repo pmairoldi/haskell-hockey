@@ -83,9 +83,9 @@ getTeamScore x = T.goals x
 getTeamShots :: ScoreInfo -> Int
 getTeamShots x = T.shots x
 
--- FIXME: will have extra comma
 getBroadcastList :: [Broadcast] -> String
 getBroadcastList [] = ""
+getBroadcastList [x] = (broadcastName x)
 getBroadcastList (x:xs) = (broadcastName x) ++ "," ++ (getBroadcastList xs)
 
 dbGame :: T.Game -> Day -> TimeOfDay -> (String, String) -> DB.Game
