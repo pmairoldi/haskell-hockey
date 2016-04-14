@@ -55,7 +55,7 @@ module Hockey.Formatting (
     lastDay,
     removeFullDateFormat,
     removeFullTimeFormat,
-    estTimeZone,
+    timezone,
     convertToEST,
     days,
     unpackParseDateTime,
@@ -127,14 +127,13 @@ dateFromComponents year month day = fromJust $ fromGregorianValid year month day
 dateFromComponents' :: Integer -> Integer -> Int -> Day
 dateFromComponents' year month day = fromJust $ fromGregorianValid year (integerToInt month) day
 
---FIXME change to EDT if the client times are off
-estTimeZone :: TimeZone
-estTimeZone = hoursToTimeZone (-5)
+timezone :: TimeZone
+timezone = hoursToTimeZone (-4)
 
 convertToEST :: GameDateTime -> GameDateTime
 convertToEST dateTime = GameDateTime (addDays (fst offsetTime) (gameDay dateTime)) (snd offsetTime)
   where
-    offsetTime = (utcToLocalTimeOfDay estTimeZone (gameTime dateTime))
+    offsetTime = (utcToLocalTimeOfDay timezone (gameTime dateTime))
 
 stringToInteger :: String -> Integer
 stringToInteger [] = 0
