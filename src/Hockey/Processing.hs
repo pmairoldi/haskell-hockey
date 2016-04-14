@@ -30,6 +30,30 @@ combineGameDates :: [T.GameDates] -> [T.Game]
 combineGameDates [] = []
 combineGameDates (x:xs) = (games x) ++ (combineGameDates xs)
 
+mergePeriods :: Int -> String -> String -> [T.Period] -> [DB.Period]
+mergePeriods gameId homeAbr awayAbr [] = []
+mergePeriods gameId homeAbr awayAbr (x:xs) = do
+    let period = (periodId x)
+    let homeStats = (homePeriod x)
+    let awayStats = (awayPeriod x)
+    let homePeriod = dbPeriod gameId homeAbr period homeStats
+    let awayPeriod = dbPeriod gameId awayAbr period awayStats
+    let periods = [homePeriod, awayPeriod]
+
+    periods ++ (mergePeriods gameId homeAbr awayAbr xs)
+
+combinePeriods :: [T.Game] -> [DB.Period]
+combinePeriods [] = []
+combinePeriods (x:xs) = do
+    let gameId = (T.gameId x)
+    let teams = (T.teams x)
+    let home = (teamAbr (team (homeInfo teams)))
+    let away = (teamAbr (team (awayInfo teams)))
+    let linescore = (T.linescore x)
+    let periods = (gamePeriods linescore)
+
+    (mergePeriods gameId home away periods) ++ (combinePeriods xs)
+
 fetchDates :: (Integer, Integer) -> IO [T.Game]
 fetchDates date = do
     results <- (getGameDates date)
@@ -76,14 +100,18 @@ convertGames db (x:xs) = do
 
     return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)) videos)]
 
-fetchGames :: Database -> Day -> Day -> IO [DB.Game]
+fetchGames :: Database -> Day -> Day -> IO ([DB.Game], [DB.Period])
 fetchGames db from to = do
     results <- (getResults from to)
     case results of
-        Just value -> (convertGames db (combineGameDates (dates value)))
-        Nothing -> return []
+        Just value -> do
+            let games = (combineGameDates (dates value))
+            dbGames <- (convertGames db games)
+            let dbPeriods = (combinePeriods games)
+            return (dbGames, dbPeriods)
+        Nothing -> return ([], [])
 
-getGames :: Database -> Day -> Day -> IO [DB.Game]
+getGames :: Database -> Day -> Day -> IO ([DB.Game], [DB.Period])
 getGames db from to = fetchGames db from to
 
 processLink :: Maybe String -> String
@@ -139,8 +167,8 @@ dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P
 getSeeds :: [Seed] -> [DB.PlayoffSeed]
 getSeeds seeds = List.map dbSeed seeds
 
-dbPeriod :: Int -> String -> Int -> PeriodData -> DB.Period
-dbPeriod gameId team period periodData = DB.Period  (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (T.periodShots periodData) (T.periodGoals periodData)
+dbPeriod :: Int -> String -> Int -> T.PeriodData -> DB.Period
+dbPeriod gameId team period periodData = DB.Period (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (T.periodShots periodData) (T.periodGoals periodData)
 
 convertPeriods :: Int -> String -> Int -> [PeriodData] -> [DB.Period]
 convertPeriods gameId team period [] = []
@@ -210,7 +238,8 @@ processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
 processGames :: Database -> Day -> Day -> IO ()
 processGames db from to = do
     values <- getGames db from to
-    db `process` (upsertMany values)
+    db `process` (upsertMany (fst values))
+    db `process` (upsertMany (snd values))
 
 processPeriods :: Database -> [DB.Game] -> IO ()
 processPeriods db xs = do

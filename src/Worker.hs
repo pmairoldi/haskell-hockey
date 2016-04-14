@@ -39,8 +39,8 @@ run db s y dates = do
     logMsg "Fetch Games" Debug
     games <- selectGames db range
 
-    logMsg "Processing Periods" Debug
-    processPeriods db games
+    -- logMsg "Processing Periods" Debug
+    -- processPeriods db games
 
     logMsg "Processing Events" Debug
     processEvents db games
