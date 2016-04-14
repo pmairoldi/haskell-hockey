@@ -74,9 +74,11 @@ import Data.List.Split as Split
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.ByteString.Char8 as ByteString
 import Data.Char as Char
-import Data.Aeson
+import Data.Aeson as Aeson
 import Data.Scientific
 import Hockey.Teams
+import Text.Read as Read
+import Data.Text as DataText
 
 digitFormat :: Int -> Integer -> String
 digitFormat digits number = LazyText.unpack (format (left digits '0') number)
@@ -114,7 +116,7 @@ lastDay year month = intToInteger $ monthLength (isLeapYear year) (integerToInt 
 lastDay' :: Integer -> Integer -> Int
 lastDay' year month = monthLength (isLeapYear year) (integerToInt month)
 
-unpackToLower :: Text -> String
+unpackToLower :: LazyText.Text -> String
 unpackToLower v = LazyText.unpack (LazyText.toLower v)
 
 stringToLower :: String -> String
@@ -149,19 +151,19 @@ integerToInt i = read (show i) :: Int
 intToInteger :: Int -> Integer
 intToInteger i = read (show i) :: Integer
 
-removeFullDateFormat :: Text -> Text
+removeFullDateFormat :: LazyText.Text -> LazyText.Text
 removeFullDateFormat text = LazyText.pack $ List.head $ Split.splitOn "T" $ LazyText.unpack text
 
-dateStringToComponents :: Text -> [Int]
+dateStringToComponents :: LazyText.Text -> [Int]
 dateStringToComponents text = List.map stringToInt $ Split.splitOn "-" $ LazyText.unpack text
 
-unpackParseDateTime :: Text -> GameDateTime
+unpackParseDateTime :: LazyText.Text -> GameDateTime
 unpackParseDateTime text = GameDateTime (unpackParseDate text) (unpackParseTime text)
 
 unpackParseDateTime' :: String -> GameDateTime
 unpackParseDateTime' text = GameDateTime (unpackParseDate $ LazyText.pack text) (unpackParseTime $ LazyText.pack text)
 
-unpackParseDate :: Text -> Day
+unpackParseDate :: LazyText.Text -> Day
 unpackParseDate text =
     let components = dateStringToComponents $ removeFullDateFormat text
     in dateFromComponents (toInteger (components !! 0)) (components !! 1)  (components !! 2)
@@ -180,10 +182,10 @@ offsetAMPMHour hour ampm
 timeFromComponents :: Int -> Int -> TimeOfDay
 timeFromComponents hour minute = fromJust $ makeTimeOfDayValid hour minute 0
 
-timeStringToComponents :: Text -> [Int]
+timeStringToComponents :: LazyText.Text -> [Int]
 timeStringToComponents text = List.map stringToInt $ Split.splitOn ":" $ LazyText.unpack $ LazyText.takeWhile (/= 'Z') text
 
-parseAMPM :: Text -> AMPM
+parseAMPM :: LazyText.Text -> AMPM
 parseAMPM text
     | ((LazyText.pack "AM") `LazyText.isSuffixOf` text) = AM
     | ((LazyText.pack "PM") `LazyText.isSuffixOf` text) = PM
@@ -192,13 +194,13 @@ parseAMPM text
 stringContainsAMPM :: String -> Bool
 stringContainsAMPM text = or $ [("AM" `List.isSuffixOf` text), ("PM" `List.isSuffixOf` text)]
 
-textContainsAMPM :: Text -> Bool
+textContainsAMPM :: LazyText.Text -> Bool
 textContainsAMPM text = or $ [((LazyText.pack "AM") `LazyText.isSuffixOf` text), ((LazyText.pack "PM") `LazyText.isSuffixOf` text)]
 
-removeFullTimeFormat :: Text -> Text
+removeFullTimeFormat :: LazyText.Text -> LazyText.Text
 removeFullTimeFormat text = LazyText.pack $ List.head $ List.reverse $ Split.splitOn "T" $ LazyText.unpack text
 
-unpackParseTime :: Text -> TimeOfDay
+unpackParseTime :: LazyText.Text -> TimeOfDay
 unpackParseTime text =
     let components = timeStringToComponents (removeFullTimeFormat text)
     in timeFromComponents (components !! 0)  (components !! 1)
@@ -250,7 +252,9 @@ periodFromPeriodString t = periodFromPeriodTime (removeGameTime t)
 
 -- Stupid NHL returning "" in their json when it is a number
 valueToInteger :: Maybe Value -> Integer
-valueToInteger (Just (Number n)) = fromInteger (coefficient n)
+valueToInteger (Just (Aeson.String n)) = case (readMaybe (DataText.unpack n) :: Maybe Integer) of
+    Just x -> x
+    Nothing -> 0
 valueToInteger _ = 0
 
 splitAndJoin :: String -> String

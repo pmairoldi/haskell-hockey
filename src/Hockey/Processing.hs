@@ -88,8 +88,13 @@ getBroadcastList [] = ""
 getBroadcastList [x] = (broadcastName x)
 getBroadcastList (x:xs) = (broadcastName x) ++ "," ++ (getBroadcastList xs)
 
+tbdOrTime :: GameState -> String -> String
+tbdOrTime status time
+    | status == TBD = "00:00:00"
+    | otherwise = time
+
 dbGame :: T.Game -> Day -> TimeOfDay -> (String, String) -> DB.Game
-dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date time (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (T.periodTime (T.linescore game)) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) "" "" (fst videos) (snd videos) [] [] True
+dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date time (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (tbdOrTime (T.gameState (T.status game)) (T.periodTime (T.linescore game))) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) "" "" (fst videos) (snd videos) [] [] True
 
 convertGames :: Database -> [T.Game] -> IO [DB.Game]
 convertGames _ [] = return $ []
