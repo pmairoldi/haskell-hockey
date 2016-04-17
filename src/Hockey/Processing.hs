@@ -93,17 +93,47 @@ tbdOrTime status time
     | status == TBD = (timeFromComponents 0 0)
     | otherwise = time
 
-dbGame :: T.Game -> Day -> TimeOfDay -> (String, String) -> DB.Game
-dbGame game date time videos = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date (tbdOrTime (T.gameState (T.status game)) time) (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (T.periodTime (T.linescore game)) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) "" "" (fst videos) (snd videos) [] [] True
+maybeHead :: [a] -> Maybe a
+maybeHead [] = Nothing
+maybeHead [x] = Just x
+maybeHead x = Just (List.head x)
+
+getCondense :: [MediaItem] -> Maybe MediaItem
+getCondense items = maybeHead (List.filter (\y -> (T.videoType y) == Condense) items)
+
+getQuality :: [VideoLink] -> Maybe VideoLink
+getQuality x = maybeHead (List.filter (\y -> (T.quality y) == Flash1800) x)
+
+getUrl :: [VideoLink] -> String
+getUrl [] = []
+getUrl x = case (getQuality x) of
+    Just url -> (T.url url)
+    Nothing -> ""
+
+getLinkTypes :: [MediaItem] -> [LinkType]
+getLinkTypes media = case (getCondense media) of
+    Just item -> T.itemTypes item
+    Nothing -> []
+
+getPlaybacks :: [LinkType] -> [VideoLink]
+getPlaybacks links = case (maybeHead links) of
+    Just x -> T.playbacks x
+    Nothing -> []
+
+getVideoUrl :: Maybe T.Media -> String
+getVideoUrl (Just x) = getUrl (getPlaybacks (getLinkTypes (T.items x)))
+getVideoUrl Nothing = []
+
+dbGame :: T.Game -> Day -> TimeOfDay -> DB.Game
+dbGame game date time = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date (tbdOrTime (T.gameState (T.status game)) time) (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (T.periodTime (T.linescore game)) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) "" "" (getVideoUrl (T.media (T.content game))) [] [] [] True
 
 convertGames :: Database -> [T.Game] -> IO [DB.Game]
 convertGames _ [] = return $ []
 convertGames db (x:xs) = do
     time <- selectTimeForGame db (gameId x)
-    videos <- fetchVideos x (gameDay (date x))
     convGames <- (convertGames db xs)
 
-    return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)) videos)]
+    return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)))]
 
 fetchGames :: Database -> Day -> Day -> IO ([DB.Game], [DB.Period])
 fetchGames db from to = do

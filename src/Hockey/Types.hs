@@ -31,6 +31,15 @@ module Hockey.Types (
     GameEvents(..),
     ScoreboardData(..),
     Scoreboard(..),
+    VideoLink(..),
+    LinkType(..),
+    MediaItem(..),
+    Media(..),
+    Content(..),
+    VideoQuality(..),
+    VideoType(..),
+    toVideoType,
+    toVideoQuality,
     fromGameState,
     toGameState,
     fromSeason,
@@ -59,6 +68,10 @@ data Team = Team {
 data HomeAway = Home | Away deriving (Enum, Show, Eq)
 
 data AMPM = AM | PM deriving (Enum, Show, Eq)
+
+data VideoType = Condense | Recap | Other deriving (Enum, Show, Read, Eq, Generic)
+
+data VideoQuality = Mobile | Tablet | Tablet60 | Wired | Wired60 | WiredWeb | Flash192 | Flash450 | Flash1200 | Flash1800 | Undefined deriving (Enum, Show, Read, Eq, Generic)
 
 data Season = Preseason | Season | Playoffs deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "Season"
@@ -127,6 +140,28 @@ data GameDateTime = GameDateTime {
     gameTime :: TimeOfDay
 } deriving (Show, Generic)
 
+data VideoLink = VideoLink {
+    quality :: VideoQuality,
+    url :: String
+} deriving (Show, Generic)
+
+data LinkType = LinkType {
+    playbacks :: [VideoLink]
+} deriving (Show, Generic)
+
+data MediaItem = MediaItem {
+    videoType :: VideoType,
+    itemTypes :: [LinkType]
+} deriving (Show, Generic)
+
+data Media = Media {
+    items :: [MediaItem]
+} deriving (Show, Generic)
+
+data Content = Content {
+    media :: Maybe Media
+} deriving (Show, Generic)
+
 data Game = Game {
     date :: GameDateTime,
     season :: Season,
@@ -134,7 +169,8 @@ data Game = Game {
     teams :: Teams,
     broadcasts :: [Broadcast],
     linescore :: Linescore,
-    status :: State
+    status :: State,
+    content :: Content
 } deriving (Show, Generic)
 
 data GameDates = GameDates {
@@ -251,3 +287,21 @@ toStrength 701 = Normal
 toStrength 702 = Powerplay
 toStrength 703 = Shorthand
 toStrength _ = Normal
+
+toVideoType :: String -> VideoType
+toVideoType "Extended Highlights" = Condense
+toVideoType "Recap" = Recap
+toVideoType _ = Other
+
+toVideoQuality :: String -> VideoQuality
+toVideoQuality "HTTP_CLOUD_MOBILE" = Mobile
+toVideoQuality "HTTP_CLOUD_TABLET" = Tablet
+toVideoQuality "HTTP_CLOUD_TABLET_60" = Tablet60
+toVideoQuality "HTTP_CLOUD_WIRED" = Wired
+toVideoQuality "HTTP_CLOUD_WIRED_60" = Wired60
+toVideoQuality "HTTP_CLOUD_WIRED_WEB" = WiredWeb
+toVideoQuality "FLASH_192K_320X180" = Flash192
+toVideoQuality "FLASH_450K_400X224" = Flash450
+toVideoQuality "FLASH_1200K_640X360" = Flash1200
+toVideoQuality "FLASH_1800K_960X540" = Flash1800
+toVideoQuality _ = Undefined

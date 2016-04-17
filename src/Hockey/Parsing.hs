@@ -97,6 +97,38 @@ instance FromJSON GameDateTime where
     parseJSON (String v) = return $ convertToEST (unpackParseDateTime' $ unpack v)
     parseJSON _          = Applicative.empty
 
+-- VideoLink
+instance FromJSON VideoLink where
+    parseJSON (Object v) = VideoLink <$>
+        fmap toVideoQuality (v .: "name") <*>
+        (v .: "url")
+    parseJSON _ = Applicative.empty
+
+-- LinkType
+instance FromJSON LinkType where
+    parseJSON (Object v) = LinkType <$>
+        (v .:? "playbacks" .!= [])
+    parseJSON _          = Applicative.empty
+
+-- MediaItem
+instance FromJSON MediaItem where
+    parseJSON (Object v) = MediaItem <$>
+        fmap toVideoType (v .: "title") <*>
+        (v .: "items")
+    parseJSON _          = Applicative.empty
+
+-- Media
+instance FromJSON Media where
+    parseJSON (Object v) = Media <$>
+        (v .: "epg")
+    parseJSON _          = Applicative.empty
+
+-- Content
+instance FromJSON Content where
+    parseJSON (Object v) = Content <$>
+        (v .:? "media")
+    parseJSON _          = Applicative.empty
+
 -- Game
 instance FromJSON Game where
     parseJSON (Object v) = Game <$>
@@ -106,12 +138,14 @@ instance FromJSON Game where
         (v .: "teams") <*>
         (v .:? "broadcasts" .!= []) <*>
         (v .: "linescore") <*>
-        (v .: "status")
+        (v .: "status") <*>
+        (v .: "content")
     parseJSON _          = Applicative.empty
 
 -- Results
 instance FromJSON Results where
-    parseJSON (Object v) =  do Results <$> (v .: "dates")
+    parseJSON (Object v) = Results <$>
+        (v .: "dates")
     parseJSON _          = Applicative.empty
 
 -- GameDates

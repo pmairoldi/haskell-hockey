@@ -54,7 +54,7 @@ gameSummaryUrl year season game = ("http://live.nhl.com/GameData/" ++ (fullYear 
 
 -- year is date year
 resultsUrl :: Day -> Day -> (String, ReturnType)
-resultsUrl from to = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ (showGregorian from) ++ "&endDate=" ++ (showGregorian to) ++ "&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.scoringplays,schedule.game.seriesSummary,seriesSummary.series", JSON)
+resultsUrl from to = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ (showGregorian from) ++ "&endDate=" ++ (showGregorian to) ++ "&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.scoringplays,schedule.game.seriesSummary,seriesSummary.series,schedule.game.content.media.epg", JSON)
 
 -- year is season start year
 boxscoreHTMLUrl :: Integer -> Season -> Integer -> (String, ReturnType)
