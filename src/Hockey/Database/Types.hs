@@ -154,4 +154,4 @@ selectGamesForSeries database year topSeed bottomSeed = do
     return $ List.map entityVal games
 
 updateGamesToInactive :: (MonadBaseControl IO m, MonadIO m) => Database -> [Game] -> m ()
-updateGamesToInactive db games = db `process` (updateWhere [GameGameId <-. (List.map gameGameId games), GameState ==. None] [GameActive =. False])
+updateGamesToInactive db games = db `process` (updateWhere ([GameGameId <-. (List.map gameGameId games)] ++ ([GameState ==. None] ||. [GameState ==. TBD])) [GameActive =. False])
