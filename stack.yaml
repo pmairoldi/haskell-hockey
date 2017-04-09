@@ -1,0 +1,14 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- '.'
+extra-deps:
+- aeson-0.11.3.0
+- http-api-data-0.2.4
+- load-env-0.1.1
+- persistent-2.2.4.1
+- persistent-postgresql-2.2.2
+- persistent-sqlite-2.2.1.1
+- persistent-template-2.1.8.1
+- yesod-form-1.4.7
+resolver: lts-8.9
