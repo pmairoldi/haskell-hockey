@@ -145,7 +145,7 @@ selectGamesForSeason database year season =  do
 
 selectEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Event]
 selectEvents database year season =  do
-    events <- database `process` (selectList [EventYear ==. (integerToInt (fst year)), EventSeason ==. season] [])
+    events <- database `process` (selectList ([EventYear ==. (integerToInt (fst year)), EventSeason ==. season] ++ ([EventEventType ==. Goal] ||. [EventEventType ==. Penalty])) [])
     return $ List.map entityVal events
 
 selectGamesForSeries :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> String -> String -> m [Game]
