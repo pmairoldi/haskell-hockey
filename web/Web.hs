@@ -24,7 +24,7 @@ instance ToJSON PlayoffSeed where
 
 -- Team
 instance ToJSON Game where
-    toJSON Game {..} = object [ "seasonID" .= ((formattedYear (intToInteger gameYear)) ++ (formattedSeason gameSeason)), "awayID" .= gameAwayId, "homeID" .= gameHomeId, "awayScore" .= gameAwayScore, "homeScore" .= gameHomeScore, "gameID" .= show gameGameId, "date" .= (show gameDate), "time" .= (show gameTime), "tv" .= gameTv, "period" .= gamePeriod, "periodTime" .= List.map Char.toUpper gamePeriodTime, "homeStatus" .= gameHomeStatus, "awayStatus" .= gameAwayStatus, "homeHighlight" .= gameHomeHighlight, "awayHighlight" .= gameAwayHighlight, "homeCondense" .= gameHomeCondense, "awayCondense" .= gameAwayCondense, "active" .= (boolToInt gameActive)]
+    toJSON Game {..} = object [ "seasonID" .= ((formattedYear (intToInteger gameYear)) ++ (formattedSeason gameSeason)), "awayID" .= gameAwayId, "homeID" .= gameHomeId, "awayScore" .= gameAwayScore, "homeScore" .= gameHomeScore, "gameID" .= show gameGameId, "date" .= (show gameDate), "time" .= (show gameTime), "tv" .= gameTv, "period" .= gamePeriod, "periodTime" .= List.map Char.toUpper gamePeriodTime, "homeStatus" .= gameHomeStatus, "awayStatus" .= gameAwayStatus, "homeHighlight" .= gameHomeHighlight, "awayHighlight" .= gameAwayHighlight, "homeCondense" .= gameHomeCondense, "awayCondense" .= gameAwayCondense, "active" .= gameActive]
 
 -- Event
 instance ToJSON Event where
