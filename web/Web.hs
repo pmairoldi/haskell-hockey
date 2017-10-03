@@ -46,7 +46,13 @@ mkYesod "App" [parseRoutes|
 /Hockey/Playoffs PlayoffsR GET
 |]
 
-instance Yesod App
+cors :: Yesod site => HandlerT site IO res -> HandlerT site IO res
+cors handler = do
+    addHeader "Access-Control-Allow-Origin" "*"
+    handler
+    
+instance Yesod App where
+    yesodMiddleware = cors . defaultYesodMiddleware 
 
 getPlayoffsR :: Handler Value
 getPlayoffsR = liftIO $ do
@@ -60,5 +66,5 @@ getPlayoffsR = liftIO $ do
 
 main :: IO ()
 main = do
-    e <- env
+    e <- env    
     warp (port e) App
