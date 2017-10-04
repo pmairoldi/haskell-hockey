@@ -1,5 +1,5 @@
 name:                haskell-hockey
-version:             1.2.1
+version:             2.0.0
 synopsis:            NHL parsing
 -- description:
 homepage:            http://peteappdesigns.com
@@ -49,6 +49,8 @@ library
 
 executable hockey-web
   hs-source-dirs:      web
+  other-modules:       Models.Json
+                     , Handlers.Playoffs
   main-is:             Web.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
