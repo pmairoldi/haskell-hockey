@@ -12,7 +12,7 @@ currentDay = do
     return $ utctDay c
 
 dates :: Season -> Year -> Day -> Integer -> IO (Day, Day)
-dates s y day range = return $ (addDays (-range) day, addDays (range) day)
+dates s y day range = return (addDays (-range) day, addDays range day)
 
 bootstrap :: Season -> Year -> IO (Day, Day)
 bootstrap s y = return $ days s y
@@ -20,11 +20,11 @@ bootstrap s y = return $ days s y
 logMsg :: Show a => a -> LoggingType -> IO ()
 logMsg msg loggingType = do
     e <- env
-    case ((logType e), loggingType) of
+    case (logType e, loggingType) of
         (Debug, Debug) -> print msg
         (Debug, Info) -> print msg
         (Info, Info) -> print msg
-        otherwise -> return ()
+        _ -> return ()
 
 run :: Database -> Season -> Year -> (Day, Day) -> IO ()
 run db s y dates = do
@@ -32,9 +32,9 @@ run db s y dates = do
     startTime <- getCurrentTime
 
     logMsg "Processing Games" Debug
-    processGames db (fst dates) (snd dates)
+    uncurry (processGames db) dates
 
-    let range = [(fst dates), (snd dates)]
+    let range = [fst dates, snd dates]
 
     logMsg "Fetch Games" Debug
     games <- selectGames db range
