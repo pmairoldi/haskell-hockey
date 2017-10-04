@@ -2,10 +2,11 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
-import Handlers.Playoffs
-import Hockey.Environment
 import Yesod
+import Handlers
+import Hockey.Environment
 
 data App =
   App
@@ -13,7 +14,9 @@ data App =
 mkYesod
   "App"
   [parseRoutes|
-/Hockey/Playoffs PlayoffsR GET
+/Hockey/Playoffs LegacyPlayoffsR GET
+/playoffs PlayoffsR GET
+/playoffs/#Integer PlayoffsWithYearR GET
 |]
 
 cors
