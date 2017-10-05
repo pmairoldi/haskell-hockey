@@ -1,18 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Models.Json
-  ( Matchup(..)
+module Models.LegacyJson
+  ( Period(..)
+  , PlayoffSeed(..)
   , Game(..)
-  , Period(..)
   , Event(..)
-  , Bracket(..)
-  , seedToMatchup
+  , PlayoffsResponse(..)
   ) where
 
 import Data.Char as Char
 import Data.List as List
-import Data.Text
 import Hockey.Database
 import Hockey.Formatting
        (formattedGame, formattedSeason, formattedYear, intToInteger,
@@ -20,17 +18,28 @@ import Hockey.Formatting
 import Hockey.Types (Season(..))
 import Yesod
 
--- Matchup
+-- Period
+instance ToJSON Period where
+  toJSON Period {..} =
+    object
+      [ "teamID" .= periodTeamId
+      , "gameID" .= show periodGameId
+      , "period" .= periodPeriod
+      , "goals" .= periodGoals
+      , "shots" .= periodShots
+      ]
+
+-- Seeds
 instance ToJSON PlayoffSeed where
   toJSON PlayoffSeed {..} =
     object
-      [ "seasonId" .=
+      [ "seasonID" .=
         (formattedYear (intToInteger playoffSeedYear) ++
          formattedSeason Playoffs)
       , "conference" .= playoffSeedConference
       , "seed" .= playoffSeedSeries
-      , "homeId" .= playoffSeedHomeId
-      , "awayId" .= playoffSeedAwayId
+      , "homeID" .= playoffSeedHomeId
+      , "awayID" .= playoffSeedAwayId
       , "round" .= playoffSeedRound
       ]
 
@@ -38,13 +47,13 @@ instance ToJSON PlayoffSeed where
 instance ToJSON Game where
   toJSON Game {..} =
     object
-      [ "seasonId" .=
+      [ "seasonID" .=
         (formattedYear (intToInteger gameYear) ++ formattedSeason gameSeason)
-      , "awayId" .= gameAwayId
-      , "homeId" .= gameHomeId
+      , "awayID" .= gameAwayId
+      , "homeID" .= gameHomeId
       , "awayScore" .= gameAwayScore
       , "homeScore" .= gameHomeScore
-      , "gameId" .= show gameGameId
+      , "gameID" .= show gameGameId
       , "date" .= show gameDate
       , "time" .= show gameTime
       , "tv" .= gameTv
@@ -59,69 +68,34 @@ instance ToJSON Game where
       , "active" .= gameActive
       ]
 
--- Period
-instance ToJSON Period where
-  toJSON Period {..} =
-    object
-      [ "teamId" .= periodTeamId
-      , "gameId" .= show periodGameId
-      , "period" .= periodPeriod
-      , "goals" .= periodGoals
-      , "shots" .= periodShots
-      ]
-
 -- Event
 instance ToJSON Event where
   toJSON Event {..} =
     object
-      [ "eventId" .= eventEventId
-      , "gameId" .= show eventGameId
-      , "teamId" .= eventTeamId
+      [ "eventID" .= eventEventId
+      , "gameID" .= show eventGameId
+      , "teamID" .= eventTeamId
       , "period" .= eventPeriod
       , "time" .= eventTime
       , "type" .= fromEventType eventEventType
       , "description" .= eventDescription
       , "videoLink" .= eventVideoLink
-      , "formalId" .= eventFormalId
+      , "formalID" .= eventFormalId
       , "strength" .= fromStrength eventStrength
       ]
 
-data Matchup = Matchup
-  { id :: String
-  , homeId :: String
-  , awayId :: String
-  , conference :: String
-  , seed :: Int
-  , round :: Int
+data PlayoffsResponse = PlayoffsResponse
+  { periods :: [Period]
+  , seeds :: [PlayoffSeed]
+  , games :: [Game]
+  , events :: [Event]
   } deriving (Show)
 
-seedToMatchup :: PlayoffSeed -> Matchup
-seedToMatchup seed =
-  Matchup
-    (formattedYear (intToInteger (playoffSeedYear seed)) ++
-     formattedSeason Playoffs ++
-     "0" ++ show (playoffSeedRound seed) ++ show (playoffSeedSeries seed))
-    (playoffSeedHomeId seed)
-    (playoffSeedAwayId seed)
-    (playoffSeedConference seed)
-    (playoffSeedSeries seed)
-    (playoffSeedRound seed)
-
-instance ToJSON Matchup where
-  toJSON Matchup {..} =
+instance ToJSON PlayoffsResponse where
+  toJSON PlayoffsResponse {..} =
     object
-      [ "id" .= pack id
-      , "homeId" .= homeId
-      , "awayId" .= awayId
-      , "conference" .= conference
-      , "seed" .= seed
-      , "round" .= round
+      [ "periods" .= periods
+      , "teams" .= seeds
+      , "games" .= games
+      , "events" .= events
       ]
-
-data Bracket = Bracket
-  { year :: String
-  , matchups :: [Matchup]
-  } deriving (Show)
-
-instance ToJSON Bracket where
-  toJSON Bracket {..} = object ["year" .= pack year, "matchups" .= matchups]

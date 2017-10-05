@@ -50,6 +50,8 @@ library
 executable hockey-web
   hs-source-dirs:      web
   other-modules:       Models.Json
+                     , Models.LegacyJson
+                     , Models.Path 
                      , Handlers
                      , Handlers.LegacyPlayoffs
                      , Handlers.Playoffs

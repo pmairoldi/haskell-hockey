@@ -5,7 +5,7 @@ module Handlers.LegacyPlayoffs
 import Hockey.Database
 import Hockey.Environment
 import Hockey.Types (Season(..))
-import Models.Json
+import Models.LegacyJson
 import Yesod
 
 getLegacyPlayoffsR :: HandlerT site IO Value

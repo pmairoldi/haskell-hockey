@@ -7,6 +7,7 @@
 import Yesod
 import Handlers
 import Hockey.Environment
+import Models.Path
 
 data App =
   App
@@ -16,7 +17,7 @@ mkYesod
   [parseRoutes|
 /Hockey/Playoffs LegacyPlayoffsR GET
 /playoffs PlayoffsR GET
-/playoffs/#Integer PlayoffsWithYearR GET
+/playoffs/#Year PlayoffsWithYearR GET
 |]
 
 cors

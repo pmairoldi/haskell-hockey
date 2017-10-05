@@ -3,32 +3,33 @@ module Handlers.Playoffs
   , getPlayoffsWithYearR
   ) where
 
+import Data.List
 import Data.Maybe
 import Hockey.Database
 import Hockey.Environment
 import Hockey.Formatting hiding (year)
 import Hockey.Types (Season(..))
 import Models.Json
+import Models.Path (Year(..))
 import Yesod
 
 getPlayoffsR :: HandlerT site IO Value
 getPlayoffsR = getPlayoffs Nothing
 
-getPlayoffsWithYearR :: Integer -> HandlerT site IO Value
-getPlayoffsWithYearR year = getPlayoffs $ Just (seasonYears year)
+getPlayoffsWithYearR :: Models.Path.Year -> HandlerT site IO Value
+getPlayoffsWithYearR year = getPlayoffs $ Just (start year, end year)
 
-getYear :: Maybe Year -> Environment -> Year 
-getYear sentYear env = fromMaybe (year env) sentYear
+getYear :: Maybe Hockey.Formatting.Year -> Environment -> Hockey.Formatting.Year
+getYear sentYear env = fromMaybe (Hockey.Environment.year env) sentYear
 
-getPlayoffs :: Maybe Year -> HandlerT site IO Value
+getPlayoffs :: Maybe Hockey.Formatting.Year -> HandlerT site IO Value
 getPlayoffs sentYear =
   liftIO $ do
     e <- env
-    
     let year = getYear sentYear e
-
-    p <- selectPeriods (database e) year Playoffs
-    s <- selectSeeds (database e) year
-    g <- selectGamesForSeason (database e) year Playoffs
-    e <- selectEvents (database e) year Playoffs
-    returnJson $ PlayoffsResponse p s g e
+    let yearString = show (fst year) ++ show (snd year)
+    -- p <- selectPeriods (database e) year Playoffs
+    seeds <- selectSeeds (database e) year
+    -- g <- selectGamesForSeason (database e) year Playoffs
+    -- e <- selectEvents (database e) year Playoffs
+    returnJson $ Bracket yearString $ map seedToMatchup seeds
