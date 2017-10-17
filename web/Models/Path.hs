@@ -24,10 +24,13 @@ yearFromText text =
     Just strings -> yearFromStrings strings
     Nothing -> Nothing
 
+validateYearRange :: Integer -> Integer -> Maybe Year
+validateYearRange start end = if start + 1 == end then Just $ Year start end else Nothing
+
 yearFromStrings :: (String, String) -> Maybe Year
 yearFromStrings value =
   case (textToInteger *** textToInteger) value of
-    (Just start, Just end) -> Just $ Year start end
+    (Just start, Just end) -> validateYearRange start end
     _ -> Nothing
 
 splitString :: String -> Maybe (String, String)

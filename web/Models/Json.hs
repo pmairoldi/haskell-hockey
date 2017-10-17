@@ -7,7 +7,7 @@ module Models.Json
   , Period(..)
   , Event(..)
   , Bracket(..)
-  , seedToMatchup
+  , toMatchup
   ) where
 
 import Data.Char as Char
@@ -20,7 +20,7 @@ import Hockey.Formatting
 import Hockey.Types (Season(..))
 import Yesod
 
--- Matchup
+-- PlayoffSeed
 instance ToJSON PlayoffSeed where
   toJSON PlayoffSeed {..} =
     object
@@ -34,7 +34,7 @@ instance ToJSON PlayoffSeed where
       , "round" .= playoffSeedRound
       ]
 
--- Team
+-- Game
 instance ToJSON Game where
   toJSON Game {..} =
     object
@@ -93,29 +93,49 @@ data Matchup = Matchup
   , conference :: String
   , seed :: Int
   , round :: Int
+  , games :: [Game]
   } deriving (Show)
 
-seedToMatchup :: PlayoffSeed -> Matchup
-seedToMatchup seed =
+seriesId :: PlayoffSeed -> Int
+seriesId seed = case playoffSeedConference seed of 
+  "w" -> case playoffSeedRound seed of
+    1 -> playoffSeedSeries seed + 4
+    2 -> playoffSeedSeries seed + 2
+    3 -> playoffSeedSeries seed + 1
+    _ -> playoffSeedSeries seed
+  _ -> playoffSeedSeries seed
+
+matchUpId :: PlayoffSeed -> String 
+matchUpId seed = formattedYear (intToInteger (playoffSeedYear seed)) 
+  ++ formattedSeason Playoffs 
+  ++ "0" 
+  ++ show (playoffSeedRound seed)
+  ++ show (seriesId seed)
+
+filterMatchupGames :: PlayoffSeed -> Game -> Bool
+filterMatchupGames seed game = matchUpId seed `List.isPrefixOf` show (gameGameId game)
+
+toMatchup :: [Game] -> PlayoffSeed -> Matchup
+toMatchup games seed =
   Matchup
-    (formattedYear (intToInteger (playoffSeedYear seed)) ++
-     formattedSeason Playoffs ++
-     "0" ++ show (playoffSeedRound seed) ++ show (playoffSeedSeries seed))
+    (matchUpId seed)
     (playoffSeedHomeId seed)
     (playoffSeedAwayId seed)
     (playoffSeedConference seed)
     (playoffSeedSeries seed)
     (playoffSeedRound seed)
+    (List.filter (filterMatchupGames seed) games)
 
 instance ToJSON Matchup where
   toJSON Matchup {..} =
     object
       [ "id" .= pack id
-      , "homeId" .= homeId
-      , "awayId" .= awayId
+      , "topTeamId" .= homeId
+      , "bottomTeamId" .= awayId
       , "conference" .= conference
       , "seed" .= seed
       , "round" .= round
+      , "games" .= games
       ]
 
 data Bracket = Bracket
