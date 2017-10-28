@@ -101,7 +101,7 @@ flyers :: Team
 flyers = Team "phi" "Philadelphia" "Flyers"
 
 coyotes :: Team
-coyotes = Team "phx" "Arizona" "Coyotes"
+coyotes = Team "ari" "Arizona" "Coyotes"
 
 penguins :: Team
 penguins = Team "pit" "Pittsburgh" "Penguins"
@@ -127,8 +127,15 @@ capitals = Team "wsh" "Washington" "Capitals"
 jets :: Team
 jets = Team "wpg" "Winnipeg" "Jets"
 
+goldenKnights :: Team
+goldenKnights = Team "vgk" "Vegas" "Golden Knights"
+
+-- Old Teams
 thrashers :: Team
 thrashers = Team "atl" "Atlanta" "Thrashers"
 
+oldCoyotes :: Team
+oldCoyotes = Team "phx" "Phoenix" "Coyotes"
+
 teamList :: [Team]
-teamList = [ducks, bruins, sabres, flames, hurricanes, blackhawks, avalanche, blueJackets, stars, redWings, oilers, panthers, kings, wild, canadiens, predators, devils, islanders, rangers, senators, flyers, coyotes, penguins, sharks, blues, lightning, mapleLeafs, canucks, capitals, jets, thrashers]
+teamList = [ducks, bruins, sabres, flames, hurricanes, blackhawks, avalanche, blueJackets, stars, redWings, oilers, panthers, kings, wild, canadiens, predators, devils, islanders, rangers, senators, flyers, coyotes, penguins, sharks, blues, lightning, mapleLeafs, canucks, capitals, jets, goldenKnights, thrashers, oldCoyotes]
