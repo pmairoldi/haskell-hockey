@@ -17,10 +17,9 @@ import Hockey.Database hiding (Team(..))
 import Hockey.Formatting
        (formattedGame, formattedSeason, formattedYear, intToInteger,
         fromStrength, fromEventType, boolToInt)
-import Hockey.Types (Season(..), Team(..))
+import Hockey.Types (Season(..), Team(..), GameState(..))
 import Hockey.Teams
 import Yesod
-import Data.Maybe
 
 -- PlayoffSeed
 instance ToJSON PlayoffSeed where
@@ -98,18 +97,28 @@ instance ToJSON Team where
       , "color" .= color
       ]
 
+-- MatchupTeam 
+data MatchupTeam = MatchupTeam {
+  team :: Maybe Team,
+  wins :: Int
+} deriving (Show)
+
+instance ToJSON MatchupTeam where
+  toJSON MatchupTeam {..} =
+    object
+      [ "team" .= team
+      , "wins" .= wins
+      ]
+
 
 data Matchup = Matchup
   { id :: String
-  , topTeam :: Team
-  , bottomTeam :: Team
+  , topTeam :: MatchupTeam
+  , bottomTeam :: MatchupTeam
   , seed :: Int
   , round :: Int
   , games :: [Game]
   } deriving (Show)
-
-team :: String -> Team
-team abbreaviation = fromMaybe (Team abbreaviation "" "" "") (teamByAbbreviation abbreaviation)
 
 seriesId :: PlayoffSeed -> Int
 seriesId seed = case playoffSeedConference seed of 
@@ -130,15 +139,31 @@ matchUpId seed = formattedYear (intToInteger (playoffSeedYear seed))
 filterMatchupGames :: PlayoffSeed -> Game -> Bool
 filterMatchupGames seed game = matchUpId seed `List.isPrefixOf` show (gameGameId game)
 
+awayTeamWon :: String -> Game -> Bool
+awayTeamWon abbreviation game = (gameAwayId game == abbreviation) && (gameAwayScore game > gameHomeScore game)
+
+homeTeamWon :: String -> Game -> Bool
+homeTeamWon abbreviation game = (gameHomeId game == abbreviation) && (gameHomeScore game > gameAwayScore game)
+
+hasWonGame :: String -> Game -> Bool 
+hasWonGame abbreviation game = (awayTeamWon abbreviation game || homeTeamWon abbreviation game) && (gameState game == Final)
+
+winsForTeam :: String -> [Game] -> Int
+winsForTeam abbreviation games = List.length (List.filter (hasWonGame abbreviation) (List.filter gameActive games))
+
+toMatchupTeam:: String -> [Game] -> MatchupTeam
+toMatchupTeam abbreviation games = MatchupTeam (teamByAbbreviation abbreviation) (winsForTeam abbreviation games)
+
 toMatchup :: [Game] -> PlayoffSeed -> Matchup
 toMatchup games seed =
   Matchup
     (matchUpId seed)
-    (team (playoffSeedHomeId seed))
-    (team (playoffSeedAwayId seed))
+    (toMatchupTeam (playoffSeedHomeId seed) matchupGames)
+    (toMatchupTeam (playoffSeedAwayId seed) matchupGames)
     (seriesId seed)
     (playoffSeedRound seed)
-    (List.filter (filterMatchupGames seed) games)
+    matchupGames
+  where matchupGames = List.filter (filterMatchupGames seed) games
 
 instance ToJSON Matchup where
   toJSON Matchup {..} =
