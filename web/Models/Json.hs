@@ -13,12 +13,14 @@ module Models.Json
 import Data.Char as Char
 import Data.List as List
 import Data.Text
-import Hockey.Database
+import Hockey.Database hiding (Team(..))
 import Hockey.Formatting
        (formattedGame, formattedSeason, formattedYear, intToInteger,
         fromStrength, fromEventType, boolToInt)
-import Hockey.Types (Season(..))
+import Hockey.Types (Season(..), Team(..))
+import Hockey.Teams
 import Yesod
+import Data.Maybe
 
 -- PlayoffSeed
 instance ToJSON PlayoffSeed where
@@ -86,15 +88,28 @@ instance ToJSON Event where
       , "strength" .= fromStrength eventStrength
       ]
 
+-- Team
+instance ToJSON Team where
+  toJSON Team {..} =
+    object
+      [ "abbreviation" .= abr
+      , "city" .= city
+      , "name" .= name
+      , "color" .= color
+      ]
+
+
 data Matchup = Matchup
   { id :: String
-  , homeId :: String
-  , awayId :: String
-  , conference :: String
+  , topTeam :: Team
+  , bottomTeam :: Team
   , seed :: Int
   , round :: Int
   , games :: [Game]
   } deriving (Show)
+
+team :: String -> Team
+team abbreaviation = fromMaybe (Team abbreaviation "" "" "") (teamByAbbreviation abbreaviation)
 
 seriesId :: PlayoffSeed -> Int
 seriesId seed = case playoffSeedConference seed of 
@@ -119,10 +134,9 @@ toMatchup :: [Game] -> PlayoffSeed -> Matchup
 toMatchup games seed =
   Matchup
     (matchUpId seed)
-    (playoffSeedHomeId seed)
-    (playoffSeedAwayId seed)
-    (playoffSeedConference seed)
-    (playoffSeedSeries seed)
+    (team (playoffSeedHomeId seed))
+    (team (playoffSeedAwayId seed))
+    (seriesId seed)
     (playoffSeedRound seed)
     (List.filter (filterMatchupGames seed) games)
 
@@ -130,9 +144,8 @@ instance ToJSON Matchup where
   toJSON Matchup {..} =
     object
       [ "id" .= pack id
-      , "topTeamId" .= homeId
-      , "bottomTeamId" .= awayId
-      , "conference" .= conference
+      , "topTeam" .= topTeam
+      , "bottomTeam" .= bottomTeam
       , "seed" .= seed
       , "round" .= round
       , "games" .= games
