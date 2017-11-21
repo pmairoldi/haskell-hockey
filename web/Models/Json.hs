@@ -39,13 +39,13 @@ instance ToJSON PlayoffSeed where
 instance ToJSON Game where
   toJSON Game {..} =
     object
-      [ "seasonId" .=
+      [ "id" .= show gameGameId      
+      ,  "seasonId" .=
         (formattedYear (intToInteger gameYear) ++ formattedSeason gameSeason)
       , "awayId" .= gameAwayId
       , "homeId" .= gameHomeId
       , "awayScore" .= gameAwayScore
       , "homeScore" .= gameHomeScore
-      , "gameId" .= show gameGameId
       , "date" .= show gameDate
       , "time" .= show gameTime
       , "tv" .= gameTv
