@@ -1,6 +1,6 @@
 module Handlers.Playoffs
-  ( getPlayoffsR
-  , getPlayoffsWithYearR
+  ( getBracketR
+  , getBracketWithYearR
   ) where
 
 import Data.List
@@ -13,11 +13,11 @@ import Models.Json
 import Models.Path (Year(..))
 import Yesod
 
-getPlayoffsR :: HandlerT site IO Value
-getPlayoffsR = getPlayoffs Nothing
+getBracketR :: HandlerT site IO Value
+getBracketR = getPlayoffs Nothing
 
-getPlayoffsWithYearR :: Models.Path.Year -> HandlerT site IO Value
-getPlayoffsWithYearR year = getPlayoffs $ Just (start year, end year)
+getBracketWithYearR :: Models.Path.Year -> HandlerT site IO Value
+getBracketWithYearR year = getPlayoffs $ Just (start year, end year)
 
 getYear :: Maybe Hockey.Formatting.Year -> Environment -> Hockey.Formatting.Year
 getYear sentYear env = fromMaybe (Hockey.Environment.year env) sentYear

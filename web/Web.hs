@@ -16,8 +16,8 @@ mkYesod
   "App"
   [parseRoutes|
 /Hockey/Playoffs LegacyPlayoffsR GET
-/playoffs PlayoffsR GET
-/playoffs/#Year PlayoffsWithYearR GET
+/bracket BracketR GET
+/bracket/#Year BracketWithYearR GET
 |]
 
 cors

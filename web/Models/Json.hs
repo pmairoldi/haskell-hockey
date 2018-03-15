@@ -40,23 +40,13 @@ instance ToJSON Game where
   toJSON Game {..} =
     object
       [ "id" .= show gameGameId      
-      ,  "seasonId" .=
-        (formattedYear (intToInteger gameYear) ++ formattedSeason gameSeason)
-      , "awayId" .= gameAwayId
-      , "homeId" .= gameHomeId
-      , "awayScore" .= gameAwayScore
-      , "homeScore" .= gameHomeScore
+      , "awayTeam" .= GameTeam (teamByAbbreviation gameAwayId) gameAwayScore gameAwayStatus (emptyToMaybeString gameAwayCondense) (emptyToMaybeString gameAwayHighlight)
+      , "homeTeam" .= GameTeam (teamByAbbreviation gameHomeId) gameHomeScore gameHomeStatus (emptyToMaybeString gameHomeCondense) (emptyToMaybeString gameHomeHighlight)
+      , "period" .= gamePeriod
+      , "periodTime" .= List.map Char.toUpper gamePeriodTime
       , "date" .= show gameDate
       , "time" .= show gameTime
       , "tv" .= gameTv
-      , "period" .= gamePeriod
-      , "periodTime" .= List.map Char.toUpper gamePeriodTime
-      , "homeStatus" .= gameHomeStatus
-      , "awayStatus" .= gameAwayStatus
-      , "homeHighlight" .= gameHomeHighlight
-      , "awayHighlight" .= gameAwayHighlight
-      , "homeCondense" .= gameHomeCondense
-      , "awayCondense" .= gameAwayCondense
       , "active" .= gameActive
       ]
 
@@ -111,6 +101,25 @@ instance ToJSON MatchupTeam where
       ]
 
 
+-- GameTeam 
+data GameTeam = GameTeam {
+  gameTeam :: Maybe Team,
+  score :: Int,
+  status :: String,
+  condense :: Maybe String,
+  highlight :: Maybe String
+} deriving (Show)
+
+instance ToJSON GameTeam where
+  toJSON GameTeam {..} =
+    object
+      [ "team" .= gameTeam
+      , "score" .= score
+      , "status" .= status
+      , "condense" .= condense
+      , "highlight" .= highlight
+      ]
+
 data Matchup = Matchup
   { id :: String
   , topTeam :: MatchupTeam
@@ -164,6 +173,11 @@ toMatchup games seed =
     (playoffSeedRound seed)
     matchupGames
   where matchupGames = List.filter (filterMatchupGames seed) games
+
+emptyToMaybeString :: String -> Maybe String 
+emptyToMaybeString value = case List.length value of
+  0 -> Nothing
+  _ -> Just value
 
 instance ToJSON Matchup where
   toJSON Matchup {..} =
