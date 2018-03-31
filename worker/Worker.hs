@@ -42,7 +42,7 @@ run db s y dates = do
   case s of
     Playoffs -> do
       logMsg "Processing Seeds" Debug
-      processSeeds db (seeds y) -- get seeds from standings
+      processSeeds db y
       processSeries db y
   endTime <- getCurrentTime
   logMsg (diffUTCTime endTime startTime) Info
@@ -63,6 +63,8 @@ bootstrapDatabase :: Database -> Year -> IO ()
 bootstrapDatabase db y = do
   logMsg "Processing Teams" Debug
   processTeams db teamList
+  logMsg "Processing Seeds" Debug
+  processSeeds db y
   logMsg "Processing Series" Debug
   processSeries db y
   processSeries db y

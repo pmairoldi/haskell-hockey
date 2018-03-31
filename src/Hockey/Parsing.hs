@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Hockey.Parsing (
     decodeResponse
@@ -89,7 +88,7 @@ instance FromJSON Linescore where
 -- State
 instance FromJSON State where
     parseJSON (Object v) = State <$>
-        fmap toGameState (fmap valueToInteger (v .: "statusCode"))
+        fmap (toGameState . valueToInteger) (v .: "statusCode")
     parseJSON _          = Applicative.empty
 
 -- GameDateTime

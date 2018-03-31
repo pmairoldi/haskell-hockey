@@ -25,6 +25,7 @@ library
                      , Hockey.Requests
                      , Hockey.Teams
                      , Hockey.Types
+                     , Hockey.Types.Standings
                      , Hockey.Video
   other-modules:       Hockey.Database.Internal
                      , Hockey.Database.Types

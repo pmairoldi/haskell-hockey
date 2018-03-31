@@ -15,6 +15,7 @@ where
 
 import Hockey.Requests
 import Hockey.Types as T
+import Hockey.Types.Standings as ST
 import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
@@ -47,8 +48,8 @@ combinePeriods [] = []
 combinePeriods (x:xs) = do
     let gameId = (T.gameId x)
     let teams = (T.teams x)
-    let home = (teamAbr (team (homeInfo teams)))
-    let away = (teamAbr (team (awayInfo teams)))
+    let home = (teamAbr (T.team (homeInfo teams)))
+    let away = (teamAbr (T.team (awayInfo teams)))
     let linescore = (T.linescore x)
     let periods = (gamePeriods linescore)
 
@@ -199,8 +200,42 @@ getEvents (x:xs) = do
 dbSeed :: Seed -> DB.PlayoffSeed
 dbSeed seed = DB.PlayoffSeed (P.year seed) (P.conference seed) (P.round seed) (P.seed seed) (P.homeId seed) (P.awayId seed) 0 0
 
-getSeeds :: [Seed] -> [DB.PlayoffSeed]
-getSeeds seeds = List.map dbSeed seeds
+combineStandings :: Standings -> [(StandingsType, StandingTeamRecord)]
+combineStandings standings = concatMap (\x -> List.map (\y -> (standingsType x, y)) (teamRecords x)) (records standings)
+
+filterTeamsInPlayoffs :: [(StandingsType, StandingTeamRecord)] -> [(StandingsType, StandingTeamRecord)]
+filterTeamsInPlayoffs = filter (\x -> fst x == DivisionLeaders || fst x == WildCard && wildCardRank (snd x) <= 2)
+
+-- replaceTeams :: [Seed] -> [(StandingsType, StandingTeamRecord)] -> [Seed]
+-- replaceTeams [] _ = []
+-- replaceTeams (x:xs) standings = do 
+--     conference <- case (P.conference x) of
+--         "e" -> Eastern
+--         "w" -> Western 
+
+-- convertStandings :: ST.Standings -> [Seed] -> [DB.PlayoffSeed]
+convertStandings standings seeds = 
+    -- records <- (records standings)
+    -- flattenedRecords <- List.map (\x -> List.map (\y -> ((standingsType x), y)) (teamRecords x)) records
+    
+    filterTeamsInPlayoffs (combineStandings standings)
+
+    -- return $ flattenedRecords
+    -- convertStandings (x:xs) = do
+--     time <- selectTimeForGame db (gameId x)
+--     convGames <- (convertGames db xs)
+
+--     return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)))]
+
+fetchStandings :: Year -> IO [DB.PlayoffSeed]
+fetchStandings year = do 
+    results <- getStandings year
+    case results of
+        Just value -> return []--convertStandings value (seeds year)
+        Nothing -> return $ List.map dbSeed (seeds year)
+
+getSeeds :: Year -> IO [DB.PlayoffSeed]
+getSeeds = fetchStandings
 
 dbPeriod :: Int -> String -> Int -> T.PeriodData -> DB.Period
 dbPeriod gameId team period periodData = DB.Period (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (T.periodShots periodData) (T.periodGoals periodData)
@@ -267,8 +302,10 @@ filterSeries (x:xs) =
 processTeams :: Database -> [T.Team] -> IO ()
 processTeams db teams = db `process` (upsertMany (getTeams teams))
 
-processSeeds :: Database -> [Seed] -> IO ()
-processSeeds db seeds = db `process` (insertManyUnique (getSeeds seeds))
+processSeeds :: Database -> Year -> IO ()
+processSeeds db year = do 
+    values <- getSeeds year
+    db `process` (upsertMany values)    
 
 processGames :: Database -> Day -> Day -> IO ()
 processGames db from to = do

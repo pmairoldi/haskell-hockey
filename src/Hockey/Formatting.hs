@@ -9,6 +9,7 @@ module Hockey.Formatting (
     formattedMonth,
     formattedDay,
     formattedYear,
+    yearToString,
     fullGameId,
     fullYear,
     fullDate,
@@ -35,6 +36,7 @@ module Hockey.Formatting (
     removeGameTimeAndPeriod,
     periodFromPeriodString,
     valueToInteger,
+    valueToInt,
     splitAndJoin,
     joinStrings,
     gameIdComponents,
@@ -103,6 +105,9 @@ fullGameId year season game = (formattedYear year) ++ (formattedSeason season) +
 
 fullYear :: Integer -> String
 fullYear year = (formattedYear year) ++ (formattedYear (year + 1))
+
+yearToString :: Year -> String
+yearToString year = formattedYear (fst year) ++ formattedYear (snd year)
 
 shortYear :: Year -> String
 shortYear year = (List.drop 2 (formattedYear (fst year))) ++ (List.drop 2 (formattedYear (snd year)))
@@ -256,6 +261,9 @@ valueToInteger (Just (Aeson.String n)) = case (readMaybe (DataText.unpack n) :: 
     Just x -> x
     Nothing -> 0
 valueToInteger _ = 0
+
+valueToInt :: Maybe Value -> Int
+valueToInt x = integerToInt (valueToInteger x)
 
 splitAndJoin :: String -> String
 splitAndJoin s = List.intercalate "," $ (Split.splitOn ", " s)
