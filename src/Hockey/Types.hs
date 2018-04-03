@@ -62,7 +62,8 @@ type Year = (Integer, Integer)
 data Team = Team {
     abr :: String,
     city :: String,
-    name :: String
+    name :: String,
+    color :: String
 } deriving (Show)
 
 data HomeAway = Home | Away deriving (Enum, Show, Eq)
