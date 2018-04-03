@@ -20,6 +20,7 @@ import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
 import Hockey.Playoffs as P
+import Data.Maybe
 
 dbTeam :: T.Team -> DB.Team
 dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
@@ -206,32 +207,70 @@ combineStandings standings = concatMap (\x -> List.map (\y -> (standingsType x, 
 filterTeamsInPlayoffs :: [(StandingsType, StandingTeamRecord)] -> [(StandingsType, StandingTeamRecord)]
 filterTeamsInPlayoffs = filter (\x -> fst x == DivisionLeaders || fst x == WildCard && wildCardRank (snd x) <= 2)
 
--- replaceTeams :: [Seed] -> [(StandingsType, StandingTeamRecord)] -> [Seed]
--- replaceTeams [] _ = []
--- replaceTeams (x:xs) standings = do 
---     conference <- case (P.conference x) of
---         "e" -> Eastern
---         "w" -> Western 
+isLeagueLeader :: (StandingsType, StandingTeamRecord) -> Bool
+isLeagueLeader x = fst x == DivisionLeaders
 
--- convertStandings :: ST.Standings -> [Seed] -> [DB.PlayoffSeed]
-convertStandings standings seeds = 
-    -- records <- (records standings)
-    -- flattenedRecords <- List.map (\x -> List.map (\y -> ((standingsType x), y)) (teamRecords x)) records
+isWildCard :: (StandingsType, StandingTeamRecord) -> Bool
+isWildCard x = fst x == WildCard
+
+isLeagueLeaderSeed :: (StandingsType, StandingTeamRecord) -> Int -> Bool
+isLeagueLeaderSeed x rank = divisionRank (snd x) == rank
+
+isWildCardSeed :: (StandingsType, StandingTeamRecord) -> Int -> Bool
+isWildCardSeed x rank = wildCardRank (snd x) == rank
+
+isLeagueLeaderDivision :: (StandingsType, StandingTeamRecord) -> DivisionType -> Bool
+isLeagueLeaderDivision x y = division (ST.team (snd x)) == y
+
+isWildCardConference :: (StandingsType, StandingTeamRecord) -> ConferenceType -> Bool
+isWildCardConference x y = ST.conference (ST.team (snd x)) == y
+
+findLeagueLeaderTeam :: [(StandingsType, StandingTeamRecord)] -> Int -> DivisionType -> Maybe (StandingsType, StandingTeamRecord)
+findLeagueLeaderTeam xs rank division = List.find (\x -> isLeagueLeader x && isLeagueLeaderDivision x division && isLeagueLeaderSeed x rank) xs
+
+getWildCardSeed :: [(StandingsType, StandingTeamRecord)] -> DivisionType -> DivisionType -> Int
+getWildCardSeed xs forDivision otherDivision = case (forTeam, otherTeam) of 
+    (Just a, Just b) -> if conferenceRank (snd a) < conferenceRank (snd b) then 2 else 1 -- team with best record gets the worst wildcard team
+    _ -> 0
+    where forTeam = findLeagueLeaderTeam xs 1 forDivision
+          otherTeam = findLeagueLeaderTeam xs 1 otherDivision
+
+findWildCardTeam :: [(StandingsType, StandingTeamRecord)] -> Int -> ConferenceType -> Maybe (StandingsType, StandingTeamRecord)
+findWildCardTeam xs rank conference = List.find (\x -> isWildCard x && isWildCardConference x conference && isWildCardSeed x rank) xs
+
+getTeamAbr :: Maybe (StandingsType, StandingTeamRecord) -> Maybe String 
+getTeamAbr x = case x of 
+    Just y -> Just $ abbreviation (ST.team (snd y))
+    Nothing -> Nothing
+
+getConference :: Seed -> ConferenceType
+getConference seed = case P.conference seed of 
+    "e" -> Eastern
+    "w" -> Western 
+
+replaceTeams :: Seed -> [(StandingsType, StandingTeamRecord)] -> Seed
+replaceTeams seed standings = case (conference, P.seed seed) of 
+        (Eastern, 1) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 1 Atlantic) (getTeamAbr $ findWildCardTeam standings (getWildCardSeed standings Atlantic Metropolitan) Eastern)
+        (Eastern, 2) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 2 Atlantic) (getTeamAbr $ findLeagueLeaderTeam standings 3 Atlantic)
+        (Eastern, 3) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 1 Metropolitan) (getTeamAbr $ findWildCardTeam standings (getWildCardSeed standings Metropolitan Atlantic) Eastern)
+        (Eastern, 4) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 2 Metropolitan) (getTeamAbr $ findLeagueLeaderTeam standings 3 Metropolitan)
+        (Western, 1) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 1 Central) (getTeamAbr $ findWildCardTeam standings (getWildCardSeed standings Central Pacific) Western)
+        (Western, 2) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 2 Central) (getTeamAbr $ findLeagueLeaderTeam standings 3 Central)
+        (Western, 3) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 1 Pacific) (getTeamAbr $ findWildCardTeam standings (getWildCardSeed standings Pacific Central) Western)
+        (Western, 4) -> updateTeams seed (getTeamAbr $ findLeagueLeaderTeam standings 2 Pacific) (getTeamAbr $ findLeagueLeaderTeam standings 3 Pacific)
+    where conference = getConference seed
     
-    filterTeamsInPlayoffs (combineStandings standings)
-
-    -- return $ flattenedRecords
-    -- convertStandings (x:xs) = do
---     time <- selectTimeForGame db (gameId x)
---     convGames <- (convertGames db xs)
-
---     return $ convGames ++ [(dbGame x (gameDay (date x)) (compareTimes time $ T.gameTime (date x)))]
+convertStandings :: ST.Standings -> [Seed] -> [Seed]
+convertStandings standings seeds = round1 ++ otherRounds
+    where teams = filterTeamsInPlayoffs (combineStandings standings)
+          round1 = List.map (`replaceTeams` teams) (List.filter (\x -> P.round x == 1) seeds)
+          otherRounds = List.filter (\x -> P.round x > 1) seeds
 
 fetchStandings :: Year -> IO [DB.PlayoffSeed]
 fetchStandings year = do 
     results <- getStandings year
     case results of
-        Just value -> return []--convertStandings value (seeds year)
+        Just value -> return $ List.map dbSeed (convertStandings value (seeds year))
         Nothing -> return $ List.map dbSeed (seeds year)
 
 getSeeds :: Year -> IO [DB.PlayoffSeed]

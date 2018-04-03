@@ -1,12 +1,14 @@
 module Hockey.Playoffs (
     Seed(..),
     seeds,
-    updateSeeds
+    updateSeeds,
+    updateTeams
 )
 
 where
 
 import Data.List as List
+import Data.Maybe
 import Hockey.Types (Year)
 import Hockey.Database.Types
 import Hockey.Formatting (integerToInt)
@@ -37,6 +39,9 @@ updateSeeds :: Year -> [(String, PlayoffSeed)] -> [PlayoffSeed]
 updateSeeds year winningSeeds
     | year >= (2013, 2014) = updateSeedsWithWildcards (integerToInt (fst year)) winningSeeds
     | otherwise = [] -- todo add back other years
+
+updateTeams :: Seed -> Maybe String -> Maybe String -> Seed
+updateTeams seed home away = Seed (year seed) (conference seed) (Hockey.Playoffs.round seed) (Hockey.Playoffs.seed seed) (fromMaybe "" home) (fromMaybe "" away)
 
 -- 2013-2014 - Present format
 filterWinningSeed :: (String, PlayoffSeed) -> String -> Int -> [Int] -> Bool
