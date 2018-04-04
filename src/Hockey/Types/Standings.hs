@@ -63,8 +63,7 @@ data StandingTeamRecord = StandingTeamRecord {
     leagueRank :: Int,
     wildCardRank :: Int,
     row :: Int,
-    gamesPlayed :: Int,
-    clinchIndicator :: Maybe String
+    gamesPlayed :: Int
 } deriving (Show, Generic)
 
 instance FromJSON StandingTeamRecord where
@@ -81,8 +80,7 @@ parseStandingTeamRecord v = StandingTeamRecord <$>
     fmap valueToInt (v .: "leagueRank") <*>
     fmap valueToInt (v .: "wildCardRank") <*>
     (v .: "row") <*>
-    (v .: "gamesPlayed") <*>
-    (v .:? "clinchIndicator")
+    (v .: "gamesPlayed")
 
 -- Standing
 data Standing = Standing {

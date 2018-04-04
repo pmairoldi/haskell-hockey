@@ -207,9 +207,6 @@ combineStandings standings = concatMap (\x -> List.map (\y -> (standingsType x, 
 filterTeamsInPlayoffs :: [(StandingsType, StandingTeamRecord)] -> [(StandingsType, StandingTeamRecord)]
 filterTeamsInPlayoffs = filter (\x -> fst x == DivisionLeaders || fst x == WildCard && wildCardRank (snd x) <= 2)
 
-isClinched :: (StandingsType, StandingTeamRecord) -> Bool
-isClinched x = isJust (clinchIndicator (snd x))
-
 isLeagueLeader :: (StandingsType, StandingTeamRecord) -> Bool
 isLeagueLeader x = fst x == DivisionLeaders
 
@@ -229,7 +226,7 @@ isWildCardConference :: (StandingsType, StandingTeamRecord) -> ConferenceType ->
 isWildCardConference x y = ST.conference (ST.team (snd x)) == y
 
 findLeagueLeaderTeam :: [(StandingsType, StandingTeamRecord)] -> Int -> DivisionType -> Maybe (StandingsType, StandingTeamRecord)
-findLeagueLeaderTeam xs rank division = List.find (\x -> isLeagueLeader x && isLeagueLeaderDivision x division && isLeagueLeaderSeed x rank && isClinched x) xs
+findLeagueLeaderTeam xs rank division = List.find (\x -> isLeagueLeader x && isLeagueLeaderDivision x division && isLeagueLeaderSeed x rank) xs
 
 getWildCardSeed :: [(StandingsType, StandingTeamRecord)] -> DivisionType -> DivisionType -> Int
 getWildCardSeed xs forDivision otherDivision = case (forTeam, otherTeam) of 
@@ -239,7 +236,7 @@ getWildCardSeed xs forDivision otherDivision = case (forTeam, otherTeam) of
           otherTeam = findLeagueLeaderTeam xs 1 otherDivision
 
 findWildCardTeam :: [(StandingsType, StandingTeamRecord)] -> Int -> ConferenceType -> Maybe (StandingsType, StandingTeamRecord)
-findWildCardTeam xs rank conference = List.find (\x -> isWildCard x && isWildCardConference x conference && isWildCardSeed x rank && isClinched x) xs
+findWildCardTeam xs rank conference = List.find (\x -> isWildCard x && isWildCardConference x conference && isWildCardSeed x rank) xs
 
 getTeamAbr :: Maybe (StandingsType, StandingTeamRecord) -> Maybe String 
 getTeamAbr x = case x of 
