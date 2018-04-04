@@ -1,20 +1,8 @@
 module Hockey.Requests (
-    playByPlayUrl,
-    summaryUrl,
-    eventVideoUrl,
-    scoreboardUrl,
-    boxscoreUrl,
-    gameSummaryUrl,
-    resultsUrl,
-    boxscoreHTMLUrl,
-    calendarUrl,
-    standingsUrl,
-    getResponse,
     getResults,
     getGameDates,
     getStandings,
     getGameEvents,
-    getGamePeriods,
     getVideo
 ) where
 
@@ -30,38 +18,9 @@ import Hockey.Video
 
 -- URLs
 
--- year is season start year
-playByPlayUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-playByPlayUrl year season game = ("http://live.nhl.com/GameData/" ++ fullYear year ++ "/" ++ fullGameId year season game ++ "/PlayByPlay.json", JSON)
-
--- year is season start year
-summaryUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-summaryUrl year season game = ("http://live.nhl.com/GameData/" ++ fullYear year ++ "/" ++ fullGameId year season game ++ "/Summary.json", JSON)
-
--- year is season start year
-eventVideoUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-eventVideoUrl year season game = ("http://live.nhl.com/GameData/" ++ fullYear year ++ "/" ++ fullGameId year season game ++ "/gc/gcgm.jsonp", JSONP)
-
--- year is season start year
-scoreboardUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-scoreboardUrl year season game = ("http://live.nhl.com/GameData/" ++ fullYear year ++ "/" ++ fullGameId year season game ++ "/gc/gcsb.jsonp", JSONP)
-
--- year is season start year
-boxscoreUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-boxscoreUrl year season game = ("http://live.nhl.com/GameData/" ++ fullYear year ++ "/" ++ fullGameId year season game ++ "/gc/gcbx.jsonp", JSONP)
-
--- not really useful
--- year is season start year
-gameSummaryUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-gameSummaryUrl year season game = ("http://live.nhl.com/GameData/" ++ fullYear year ++ "/" ++ fullGameId year season game ++ "/gc/gcgs.jsonp", JSONP)
-
 -- year is date year
 resultsUrl :: Day -> Day -> (String, ReturnType)
 resultsUrl from to = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ showGregorian from ++ "&endDate=" ++ showGregorian to ++ "&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.scoringplays,schedule.game.seriesSummary,seriesSummary.series,schedule.game.content.media.epg", JSON)
-
--- year is season start year
-boxscoreHTMLUrl :: Integer -> Season -> Integer -> (String, ReturnType)
-boxscoreHTMLUrl year season game = ("http://www.nhl.com/gamecenter/en/boxscore?id=" ++ fullGameId year season game, HTML)
 
 -- year is date year
 calendarUrl :: Integer -> Integer -> (String, ReturnType)
@@ -70,6 +29,9 @@ calendarUrl year month = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate
 -- year is season start year + season end year
 standingsUrl :: Year -> (String, ReturnType)
 standingsUrl year = ("http://statsapi.web.nhl.com/api/v1/standings/wildCardWithLeaders?expand=standings.team&season=" ++ yearToString year, JSON)
+
+eventsUrl :: Integer -> Season -> Integer -> (String, ReturnType)
+eventsUrl year season game = ("http://statsapi.web.nhl.com/api/v1/game/" ++ fullGameId year season game ++ "/feed/live", JSON)
 
 -- HTTP Requests
 getResponse :: (String, ReturnType) -> IO String
@@ -85,12 +47,8 @@ getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
 getStandings :: Year -> IO (Maybe Standings)
 getStandings year = decodeResponse $ getResponse $ standingsUrl year
 
---TODO: move to new api
 getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)
-getGameEvents year season game = decodeResponse $ getResponse $ playByPlayUrl year season game
-
-getGamePeriods :: Integer -> Season -> Integer -> IO (Maybe Scoreboard)
-getGamePeriods year season game = decodeResponse $ getResponse $ scoreboardUrl year season game
+getGameEvents year season game = decodeResponse $ getResponse $ eventsUrl year season game
 
 getVideo :: Day -> Year -> Season -> Int -> String -> String -> HomeAway -> IO (Maybe String)
 getVideo date year season game awayAbr homeAbr homeAway = ping $ videoUrl date year season (gameFromGameId game) awayAbr homeAbr homeAway

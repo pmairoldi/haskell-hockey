@@ -5,7 +5,6 @@ module Hockey.Processing (
     processGames,
     processEvents,
     processSeeds,
-    processPeriods,
     processSeries,
     getSeries,
     filterSeries
@@ -279,27 +278,6 @@ getSeeds = fetchStandings
 dbPeriod :: Int -> String -> Int -> T.PeriodData -> DB.Period
 dbPeriod gameId team period periodData = DB.Period (yearFromGameId gameId) (seasonFromGameId gameId) gameId team period (T.periodShots periodData) (T.periodGoals periodData)
 
-convertPeriods :: Int -> String -> Int -> [PeriodData] -> [DB.Period]
-convertPeriods gameId team period [] = []
-convertPeriods gameId team period (x:xs) = [(dbPeriod gameId team period x)] ++ (convertPeriods gameId team (period + 1) xs)
-
-fetchPeriods :: DB.Game -> IO [DB.Period]
-fetchPeriods game = do
-    results <- let gameId = (gameGameId game)
-               in getGamePeriods (intToInteger (yearFromGameId gameId)) (seasonFromGameId gameId) (intToInteger (gameFromGameId gameId))
-    case results of
-        Just value -> let h = (home value)
-                          a = (away value)
-                      in return $ (convertPeriods (gameGameId game) (T.periodTeamId h) 1 (periods h)) ++ (convertPeriods (gameGameId game) (T.periodTeamId a) 1 (periods a))
-        Nothing -> return []
-
-getPeriods :: [DB.Game] -> IO [DB.Period]
-getPeriods [] = return []
-getPeriods (x:xs) = do
-    h <- fetchPeriods x
-    t <- getPeriods xs
-    return $ h ++ t
-
 getSeries :: Database -> Year -> [DB.PlayoffSeed] -> IO [(DB.PlayoffSeed, [DB.Game])]
 getSeries db year [] = return []
 getSeries db year (x:xs) = do
@@ -351,11 +329,6 @@ processGames db from to = do
     values <- getGames db from to
     db `process` (upsertMany (fst values))
     db `process` (upsertMany (snd values))
-
-processPeriods :: Database -> [DB.Game] -> IO ()
-processPeriods db xs = do
-    values <- getPeriods xs
-    db `process` (upsertMany values)
 
 processEvents :: Database -> [DB.Game] -> IO ()
 processEvents db xs = do

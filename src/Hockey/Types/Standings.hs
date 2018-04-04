@@ -8,13 +8,7 @@ module Hockey.Types.Standings (
     StandingsTeam(..),
     StandingTeamRecord(..),
     Standing(..),
-    Standings(..),
-    fromStandingsType,
-    toStandingsType,
-    fromConferenceType,
-    toConferenceType,
-    fromDivisionType,
-    toDivisionType
+    Standings(..)
 )
 
 where
