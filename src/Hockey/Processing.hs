@@ -15,6 +15,7 @@ where
 import Hockey.Requests
 import Hockey.Types as T
 import Hockey.Types.Standings as ST
+import Hockey.Types.Events as ET
 import Hockey.Database as DB
 import Hockey.Formatting
 import Data.List as List
@@ -165,29 +166,19 @@ fetchVideos game date = do
 
     return $ ((processLink awayHighlight), (processLink homeHighlight))
 
-pickTeam :: Int -> (Int, String) -> (Int, String) -> String
-pickTeam teamId (awayId, awayName) (homeId, homeName)
-    | teamId == awayId = teamIdFromName awayName
-    | teamId == homeId = teamIdFromName homeName
-    | otherwise = ""
+dbEvent :: Int -> ET.Play -> DB.Event
+dbEvent gameId event = DB.Event (integerToInt (ET.eventId event)) (yearFromGameId gameId) (seasonFromGameId gameId) gameId (ET.playTeam event) (integerToInt (ET.period event)) (ET.time event) (ET.eventType event) (ET.description event) "" (ET.formalId event) (ET.playStrength event)
 
-dbEvent :: Int -> T.Event -> (Int, String) -> (Int, String) -> DB.Event
-dbEvent gameId event awayTeam homeTeam = DB.Event (eventId event) (yearFromGameId gameId) (seasonFromGameId gameId) gameId (pickTeam (teamId event) awayTeam homeTeam) (period event) (time event) (eventType event) (description event) "" (formalId event) (strength event)
-
-convertEvents :: Int -> [T.Event] -> (Int, String) -> (Int, String) -> [DB.Event]
-convertEvents _ [] _ _ = []
-convertEvents gameId (x:xs) awayTeam homeTeam = [(dbEvent gameId x awayTeam homeTeam)] ++ (convertEvents gameId xs awayTeam homeTeam)
-
-convertGameEvents :: GameEvents -> EventGame
-convertGameEvents e = game (eventData e)
+convertEvents :: Int -> [ET.Play] -> [DB.Event]
+convertEvents _ [] = []
+convertEvents gameId (x:xs) = dbEvent gameId x : convertEvents gameId xs
 
 fetchEvents :: DB.Game -> IO [DB.Event]
 fetchEvents game = do
-    results <- let gameId = (gameGameId game)
+    results <- let gameId = gameGameId game
                in getGameEvents (intToInteger (yearFromGameId gameId)) (seasonFromGameId gameId) (intToInteger (gameFromGameId gameId))
     case results of
-        Just value -> let e = (convertGameEvents value)
-                      in return $ convertEvents (gameGameId game) (play (plays e)) ((awayTeamId e), (awayName e)) ((homeTeamId e), (homeName e))
+        Just value -> return $ convertEvents (gameGameId game) (ET.allPlays (ET.plays (ET.liveData value)))
         Nothing -> return []
 
 getEvents :: [DB.Game] -> IO [DB.Event]
@@ -330,10 +321,13 @@ processGames db from to = do
     db `process` (upsertMany (fst values))
     db `process` (upsertMany (snd values))
 
+filterGoalsAndPenalties :: DB.Event -> Bool
+filterGoalsAndPenalties event = eventEventType event == Goal || eventEventType event == Penalty
+
 processEvents :: Database -> [DB.Game] -> IO ()
 processEvents db xs = do
     values <- getEvents xs
-    db `process` (upsertMany values)
+    db `process` upsertMany (List.filter filterGoalsAndPenalties values)
 
 processSeries :: Database -> Year -> IO ()
 processSeries db year = do

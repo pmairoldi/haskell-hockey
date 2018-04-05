@@ -34,9 +34,8 @@ run db s y dates = do
   startTime <- getCurrentTime
   logMsg "Processing Games" Debug
   uncurry (processGames db) dates
-  let range = [fst dates, snd dates]
   logMsg "Fetch Games" Debug
-  games <- selectGames db range
+  games <- uncurry (selectGames db) dates
   logMsg "Processing Events" Debug
   processEvents db games
   case s of

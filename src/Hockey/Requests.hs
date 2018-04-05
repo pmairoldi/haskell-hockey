@@ -10,6 +10,7 @@ import Hockey.Network
 import Hockey.Parsing
 import Hockey.Types
 import Hockey.Types.Standings (Standings(..))
+import Hockey.Types.Events (Events(..))
 import Hockey.Formatting
 import Data.Time.Calendar
 import Hockey.Video
@@ -47,7 +48,7 @@ getGameDates (x, y) = decodeResponse $ getResponse $ calendarUrl x y
 getStandings :: Year -> IO (Maybe Standings)
 getStandings year = decodeResponse $ getResponse $ standingsUrl year
 
-getGameEvents :: Integer -> Season -> Integer -> IO (Maybe GameEvents)
+getGameEvents :: Integer -> Season -> Integer -> IO (Maybe Events)
 getGameEvents year season game = decodeResponse $ getResponse $ eventsUrl year season game
 
 getVideo :: Day -> Year -> Season -> Int -> String -> String -> HomeAway -> IO (Maybe String)

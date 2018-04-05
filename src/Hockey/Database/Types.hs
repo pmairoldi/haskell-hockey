@@ -123,9 +123,9 @@ selectTimeForGame database gameId = do
         [] -> return $ timeFromComponents 0 0
         (x:xs) -> return $ (gameTime (entityVal x))
 
-selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> [Day] -> m [Game]
-selectGames database dates = do
-    games <- database `process` (selectList [GameDate <-. dates] [])
+selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> Day -> Day -> m [Game]
+selectGames database start end = do
+    games <- database `process` selectList [GameDate >=. start, GameDate <=. end] []
     return $ List.map entityVal games
 
 selectPeriods :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Period]
