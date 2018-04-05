@@ -117,7 +117,8 @@ data Period = Period {
 data ScoreInfo = ScoreInfo {
     goals :: Int,
     shots :: Int,
-    powerplay :: Bool
+    powerPlay :: Bool,
+    goaliePulled :: Bool
 } deriving (Show, Generic)
 
 data ScoreTeams = ScoreTeams {

@@ -85,6 +85,16 @@ getTeamScore x = T.goals x
 getTeamShots :: ScoreInfo -> Int
 getTeamShots x = T.shots x
 
+getTeamStatus :: ScoreInfo -> String
+getTeamStatus x = case (powerPlay, goaliePulled) of
+    (True, True) -> "pp,en"
+    (True, False) -> "pp"
+    (False, True) -> "en"
+    (False, False) -> ""
+    where 
+        powerPlay = T.powerPlay x
+        goaliePulled = T.goaliePulled x
+
 getBroadcastList :: [Broadcast] -> String
 getBroadcastList [] = ""
 getBroadcastList [x] = (broadcastName x)
@@ -127,7 +137,7 @@ getVideoUrl (Just x) = getUrl (getPlaybacks (getLinkTypes (T.items x)))
 getVideoUrl Nothing = []
 
 dbGame :: T.Game -> Day -> TimeOfDay -> DB.Game
-dbGame game date time = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date (tbdOrTime (T.gameState (T.status game)) time) (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (T.periodTime (T.linescore game)) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) "" "" (getVideoUrl (T.media (T.content game))) [] [] [] True
+dbGame game date time = DB.Game (yearFromGameId (gameId game)) (seasonFromGameId (gameId game)) (gameId game) (getTeamId (T.awayInfo (T.teams game))) (getTeamId (T.homeInfo (T.teams game))) date (tbdOrTime (T.gameState (T.status game)) time) (getBroadcastList (T.broadcasts game)) (T.gameState (T.status game)) (T.gamePeriod (T.linescore game)) (T.periodTime (T.linescore game)) (getTeamScore (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamScore (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamShots (T.homeTeam (T.scoreTeams (T.linescore game)))) (getTeamStatus (T.awayTeam (T.scoreTeams (T.linescore game)))) (getTeamStatus (T.homeTeam (T.scoreTeams (T.linescore game)))) (getVideoUrl (T.media (T.content game))) [] [] [] True
 
 convertGames :: Database -> [T.Game] -> IO [DB.Game]
 convertGames _ [] = return $ []

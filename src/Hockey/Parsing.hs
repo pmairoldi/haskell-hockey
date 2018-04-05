@@ -66,7 +66,8 @@ instance FromJSON ScoreInfo where
     parseJSON (Object v) = ScoreInfo <$>
         (v .: "goals") <*>
         (v .: "shotsOnGoal") <*>
-        (v .: "powerPlay")
+        (v .: "powerPlay") <*>
+        (v .: "goaliePulled")
     parseJSON _          = Applicative.empty
 
 -- ScoreTeams
