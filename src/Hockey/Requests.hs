@@ -25,7 +25,7 @@ resultsUrl from to = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" +
 
 -- year is date year
 calendarUrl :: Integer -> Integer -> (String, ReturnType)
-calendarUrl year month = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ fullDate year month 1 ++ "&endDate=" ++ fullDate year month (lastDay year month), JSON)
+calendarUrl year month = ("http://statsapi.web.nhl.com/api/v1/schedule?startDate=" ++ fullDate year month 1 ++ "&endDate=" ++ fullDate year month (lastDay year month) ++ "&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.scoringplays,schedule.game.seriesSummary,seriesSummary.series,schedule.game.content.media.epg", JSON)
 
 -- year is season start year + season end year
 standingsUrl :: Year -> (String, ReturnType)
