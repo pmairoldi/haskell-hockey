@@ -58,8 +58,8 @@ datesToProcess args s y r = do
     then bootstrap s y
     else dates s y day r
 
-bootstrapDatabase :: Database -> Year -> IO ()
-bootstrapDatabase db y = do
+bootstrapDatabase :: Database -> Year -> Season -> IO ()
+bootstrapDatabase db y s = do
   logMsg "Processing Teams" Debug
   processTeams db teamList
   logMsg "Processing Seeds" Debug
@@ -68,6 +68,7 @@ bootstrapDatabase db y = do
   processSeries db y
   processSeries db y
   processSeries db y
+  deleteEvents db y s
 
 main :: IO ()
 main = do
@@ -78,5 +79,5 @@ main = do
   let y = year e
   let r = intToInteger (range e)
   migrate db
-  Control.Monad.when (isBootStrap args) $ bootstrapDatabase db y
+  Control.Monad.when (isBootStrap args) $ bootstrapDatabase db y s
   run db s y =<< datesToProcess args s y r

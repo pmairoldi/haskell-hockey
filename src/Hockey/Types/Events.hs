@@ -58,7 +58,7 @@ instance FromJSON Play where
 parsePlay v =  do
     about <- v .: "about"
 
-    eventId <- about .: "eventIdx"
+    eventId <- about .: "eventId"
     period <- about .: "period"
     time <- about .: "periodTime"
 

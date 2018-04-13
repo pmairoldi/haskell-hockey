@@ -23,7 +23,8 @@ module Hockey.Database.Types (
     selectGamesForSeason,
     selectEvents,
     selectGamesForSeries,
-    updateGamesToInactive
+    updateGamesToInactive,
+    deleteEvents
 )
 
 where
@@ -148,6 +149,9 @@ selectEvents database year season =  do
     events <- database `process` (selectList ([EventYear ==. (integerToInt (fst year)), EventSeason ==. season] ++ ([EventEventType ==. Goal] ||. [EventEventType ==. Penalty])) [])
     return $ List.map entityVal events
 
+deleteEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m ()
+deleteEvents database year season =  database `process` deleteWhere [EventYear ==. integerToInt (fst year), EventSeason ==. season]
+    
 selectGamesForSeries :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> String -> String -> m [Game]
 selectGamesForSeries database year topSeed bottomSeed = do
     games <- database `process` (selectList ([GameYear ==. (integerToInt (fst year)), GameSeason ==. Playoffs, GameHomeId ==. topSeed, GameAwayId ==. bottomSeed] ||. [GameYear ==. (integerToInt (fst year)), GameSeason ==. Playoffs, GameHomeId ==. bottomSeed, GameAwayId ==. topSeed])[])

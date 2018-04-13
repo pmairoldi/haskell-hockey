@@ -7,7 +7,7 @@ module Hockey.Processing (
     processSeeds,
     processSeries,
     getSeries,
-    filterSeries
+    filterSeries,
 )
 
 where
