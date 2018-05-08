@@ -43,6 +43,8 @@ run db s y dates = do
       logMsg "Processing Seeds" Debug
       processSeeds db y
       processSeries db y
+      processSeries db y
+      processSeries db y
   endTime <- getCurrentTime
   logMsg (diffUTCTime endTime startTime) Info
   return ()
