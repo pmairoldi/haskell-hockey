@@ -38,13 +38,13 @@ run db s y dates = do
   games <- uncurry (selectGames db) dates
   logMsg "Processing Events" Debug
   processEvents db games
-  case s of
-    Playoffs -> do
-      logMsg "Processing Seeds" Debug
-      processSeeds db y
-      processSeries db y
-      processSeries db y
-      processSeries db y
+  -- case s of
+  --   Playoffs -> do
+  --     logMsg "Processing Seeds" Debug
+  --     processSeeds db y
+  --     processSeries db y
+  --     processSeries db y
+  --     processSeries db y
   endTime <- getCurrentTime
   logMsg (diffUTCTime endTime startTime) Info
   return ()
