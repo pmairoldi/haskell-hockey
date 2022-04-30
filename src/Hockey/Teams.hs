@@ -144,7 +144,7 @@ oldCoyotes :: Team
 oldCoyotes = Team "phx" "Phoenix" "Coyotes" "#681d29"
 
 teamList :: [Team]
-teamList = [ducks, bruins, sabres, flames, hurricanes, blackhawks, avalanche, blueJackets, stars, redWings, oilers, panthers, kings, wild, canadiens, predators, devils, islanders, rangers, senators, flyers, coyotes, penguins, sharks, blues, lightning, mapleLeafs, canucks, capitals, jets, goldenKnights, thrashers, oldCoyotes]
+teamList = [ducks, bruins, sabres, flames, hurricanes, blackhawks, avalanche, blueJackets, stars, redWings, oilers, panthers, kings, wild, canadiens, predators, devils, islanders, rangers, senators, flyers, coyotes, penguins, sharks, blues, lightning, mapleLeafs, canucks, capitals, jets, goldenKnights, thrashers, oldCoyotes, kraken]
 
 teamByAbbreviation :: String -> Maybe Team 
 teamByAbbreviation team = find (\x -> abr x == team) teamList 
