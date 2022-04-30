@@ -1,35 +1,62 @@
 {
   // See https://go.microsoft.com/fwlink/?LinkId=733558
   // for the documentation about the tasks.json format
-  "version": "0.1.0",
+  "version": "2.0.0",
   "command": "stack",
-  "isShellCommand": true,
-  "showOutput": "always",
-  "suppressTaskName": true,
   "tasks": [
     {
-      "taskName": "build",
-      "args": ["build"]
+      "label": "build",
+      "type": "shell",
+      "args": [
+        "build"
+      ],
+      "problemMatcher": [],
+      "group": "build"
     },
     {
-      "taskName": "install",
-      "args": ["install"]
+      "label": "install",
+      "type": "shell",
+      "args": [
+        "install"
+      ],
+      "problemMatcher": []
     },
     {
-      "taskName": "test",
-      "args": ["test"]
+      "label": "test",
+      "type": "shell",
+      "args": [
+        "test"
+      ],
+      "problemMatcher": []
     },
     {
-      "taskName": "run worker",
-      "args": ["exec", "hockey-worker"]
+      "label": "run worker",
+      "type": "shell",
+      "args": [
+        "exec",
+        "hockey-worker"
+      ],
+      "problemMatcher": []
     },
     {
-      "taskName": "run worker bootstrap",
-      "args": ["exec", "hockey-worker", "--", "-b"]
+      "label": "run worker bootstrap",
+      "type": "shell",
+      "args": [
+        "exec",
+        "hockey-worker",
+        "--",
+        "-b"
+      ],
+      "problemMatcher": []
     },
     {
-      "taskName": "run server",
-      "args": ["exec", "hockey-web"]
+      "label": "run server",
+      "type": "shell",
+      "args": [
+        "exec",
+        "hockey-web"
+      ],
+      "problemMatcher": []
     }
   ]
 }

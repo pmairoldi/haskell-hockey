@@ -31,7 +31,8 @@ module Hockey.Teams (
     canucks,
     capitals,
     jets,
-    thrashers
+    thrashers,
+    kraken
 )
 
 where
@@ -131,6 +132,9 @@ jets = Team "wpg" "Winnipeg" "Jets" "#001e50"
 
 goldenKnights :: Team
 goldenKnights = Team "vgk" "Vegas" "Golden Knights" "#80724f"
+
+kraken :: Team
+kraken = Team "sea" "Seattle" "Kraken" "#9cdbd9"
 
 -- Old Teams
 thrashers :: Team

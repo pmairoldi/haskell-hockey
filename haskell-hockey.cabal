@@ -60,8 +60,8 @@ executable hockey-web
   main-is:             Web.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , yesod-form <1.4.8
-                     , yesod
+                     , yesod-form >= 1.4 && <1.5
+                     , yesod  >= 1.4 && <1.5
                      , text
                      , haskell-hockey
   default-language:    Haskell2010
