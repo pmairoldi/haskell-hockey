@@ -8,7 +8,7 @@ import Hockey.Types (Season(..))
 import Models.LegacyJson
 import Yesod
 
-getLegacyPlayoffsR :: HandlerT site IO Value
+getLegacyPlayoffsR :: HandlerFor site Value
 getLegacyPlayoffsR =
   liftIO $ do
     e <- env

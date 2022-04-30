@@ -8,6 +8,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Hockey.Database.Types (
     migrate,
@@ -41,6 +46,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Control
 import Data.List as List
 import Data.Aeson
+import Control.Monad.IO.Unlift;
+import Control.Monad.Logger
 
 -- add Maybe monad to some type
 -- have videos be a map
@@ -114,48 +121,48 @@ PlayoffSeed
     deriving Show Eq
 |]
 
-migrate :: (MonadBaseControl IO m, MonadIO m) => Database -> m ()
+migrate :: (MonadUnliftIO m) => Database -> m ()
 migrate database = database `process` (runMigration migrateAll)
 
-selectTimeForGame :: (MonadBaseControl IO m, MonadIO m) => Database -> Int -> m TimeOfDay
+selectTimeForGame :: (MonadUnliftIO m) => Database -> Int -> m TimeOfDay
 selectTimeForGame database gameId = do
     games <- database `process` (selectList [GameGameId ==. gameId] [LimitTo 1])
     case games of
         [] -> return $ timeFromComponents 0 0
         (x:xs) -> return $ (gameTime (entityVal x))
 
-selectGames :: (MonadBaseControl IO m, MonadIO m) => Database -> Day -> Day -> m [Game]
+selectGames :: (MonadUnliftIO m) => Database -> Day -> Day -> m [Game]
 selectGames database start end = do
     games <- database `process` selectList [GameDate >=. start, GameDate <=. end] []
     return $ List.map entityVal games
 
-selectPeriods :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Period]
+selectPeriods :: (MonadUnliftIO m) => Database -> Year -> Season -> m [Period]
 selectPeriods database year season =  do
     periods <- database `process` (selectList [PeriodYear ==. (integerToInt (fst year)), PeriodSeason ==. season] [])
     return $ List.map entityVal periods
 
-selectSeeds :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> m [PlayoffSeed]
+selectSeeds :: (MonadUnliftIO m) => Database -> Year -> m [PlayoffSeed]
 selectSeeds database year =  do
     seeds <- database `process` (selectList [PlayoffSeedYear ==. (integerToInt (fst year))] [])
     return $ List.map entityVal seeds
 
-selectGamesForSeason :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Game]
+selectGamesForSeason :: (MonadUnliftIO m) => Database -> Year -> Season -> m [Game]
 selectGamesForSeason database year season =  do
     games <- database `process` (selectList [GameYear ==. (integerToInt (fst year)), GameSeason ==. season] [])
     return $ List.map entityVal games
 
-selectEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m [Event]
+selectEvents :: (MonadUnliftIO m) => Database -> Year -> Season -> m [Event]
 selectEvents database year season =  do
     events <- database `process` (selectList ([EventYear ==. (integerToInt (fst year)), EventSeason ==. season] ++ ([EventEventType ==. Goal] ||. [EventEventType ==. Penalty])) [])
     return $ List.map entityVal events
 
-deleteEvents :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> Season -> m ()
+deleteEvents :: (MonadUnliftIO m) => Database -> Year -> Season -> m ()
 deleteEvents database year season =  database `process` deleteWhere [EventYear ==. integerToInt (fst year), EventSeason ==. season]
     
-selectGamesForSeries :: (MonadBaseControl IO m, MonadIO m) => Database -> Year -> String -> String -> m [Game]
+selectGamesForSeries :: (MonadUnliftIO m) => Database -> Year -> String -> String -> m [Game]
 selectGamesForSeries database year topSeed bottomSeed = do
     games <- database `process` (selectList ([GameYear ==. (integerToInt (fst year)), GameSeason ==. Playoffs, GameHomeId ==. topSeed, GameAwayId ==. bottomSeed] ||. [GameYear ==. (integerToInt (fst year)), GameSeason ==. Playoffs, GameHomeId ==. bottomSeed, GameAwayId ==. topSeed])[])
     return $ List.map entityVal games
 
-updateGamesToInactive :: (MonadBaseControl IO m, MonadIO m) => Database -> [Game] -> m ()
+updateGamesToInactive :: (MonadUnliftIO m) => Database -> [Game] -> m ()
 updateGamesToInactive db games = db `process` (updateWhere ([GameGameId <-. (List.map gameGameId games)] ++ ([GameState ==. None] ||. [GameState ==. TBD])) [GameActive =. False])

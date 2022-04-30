@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Hockey.Database (
     module Hockey.Database.Types,
@@ -16,13 +18,13 @@ import Database.Persist
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
 
-upsertMany :: (MonadIO m, PersistEntity val, PersistUnique (PersistEntityBackend val)) => [val] -> ReaderT (PersistEntityBackend val) m ()
+upsertMany :: (MonadIO m, PersistUniqueWrite backend, OnlyOneUniqueKey record, PersistEntityBackend record ~ BaseBackend backend) => [record] -> ReaderT backend m ()
 upsertMany [] = return ()
 upsertMany (x:xs) = do
     upsert x []
     upsertMany xs
 
-insertManyUnique :: (MonadIO m, PersistEntity val, PersistUnique (PersistEntityBackend val)) => [val] -> ReaderT (PersistEntityBackend val) m ()
+insertManyUnique :: (MonadIO m, PersistUniqueWrite backend, PersistEntity record, PersistEntityBackend record ~ BaseBackend backend) => [record] -> ReaderT backend m ()
 insertManyUnique [] = return ()
 insertManyUnique (x:xs) = do
     insertUnique x

@@ -22,7 +22,7 @@ mkYesod
 
 cors
   :: Yesod site
-  => HandlerT site IO res -> HandlerT site IO res
+  => HandlerFor site res -> HandlerFor site res
 cors handler = do
   addHeader "Access-Control-Allow-Origin" "*"
   handler

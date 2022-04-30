@@ -13,16 +13,16 @@ import Models.Json
 import Models.Path (Year(..))
 import Yesod
 
-getBracketR :: HandlerT site IO Value
+getBracketR :: HandlerFor site Value
 getBracketR = getPlayoffs Nothing
 
-getBracketWithYearR :: Models.Path.Year -> HandlerT site IO Value
+getBracketWithYearR :: Models.Path.Year -> HandlerFor site Value
 getBracketWithYearR year = getPlayoffs $ Just (start year, end year)
 
 getYear :: Maybe Hockey.Formatting.Year -> Environment -> Hockey.Formatting.Year
 getYear sentYear env = fromMaybe (Hockey.Environment.year env) sentYear
 
-getPlayoffs :: Maybe Hockey.Formatting.Year -> HandlerT site IO Value
+getPlayoffs :: Maybe Hockey.Formatting.Year -> HandlerFor site Value
 getPlayoffs sentYear =
   liftIO $ do
     e <- env

@@ -18,6 +18,7 @@ import Control.Monad.Logger
 import Control.Monad.Trans.Control
 import Data.Text as T
 import Data.ByteString.Char8 as BS
+import Control.Monad.IO.Unlift;
 
 type Query m a = ConnectionPool -> m a
 type Driver m a = Query m a -> m a
@@ -54,18 +55,18 @@ sqliteConnection database
     | (name database) == [] = ":memory:"
     | otherwise = T.pack (name database)
 
-postgres :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Database -> Driver m a
+postgres :: (MonadLoggerIO m, MonadUnliftIO m) => Database -> Driver m a
 postgres database query = withPostgresqlPool (postgresConnection database) (connections database) query
 
-sqlite :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Database -> Driver m a
+sqlite :: (MonadLoggerIO m, MonadUnliftIO m) => Database -> Driver m a
 sqlite database query = withSqlitePool (sqliteConnection database) (connections database) query
 
-connection :: (MonadBaseControl IO m, MonadLogger m, MonadIO m) => Database -> Driver m a
+connection :: (MonadLoggerIO m, MonadUnliftIO m) => Database -> Driver m a
 connection database = case (dbType database) of
     Postgres -> postgres database
     SQLite -> sqlite database
 
-process :: (MonadBaseControl IO m, MonadIO m) => Database -> Result a (m a)
+process :: (MonadUnliftIO m) => Database -> Result a (m a)
 process database queries = case (logging database) of
     Debug -> db runStderrLoggingT (connection database) queries
     otherwise -> db runNoLoggingT (connection database) queries
