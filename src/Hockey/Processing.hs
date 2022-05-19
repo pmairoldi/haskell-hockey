@@ -114,7 +114,7 @@ getCondense :: [MediaItem] -> Maybe MediaItem
 getCondense items = maybeHead (List.filter (\y -> (T.videoType y) == Condense) items)
 
 getQuality :: [VideoLink] -> Maybe VideoLink
-getQuality x = maybeHead (List.filter (\y -> (T.quality y) == Flash1800) x)
+getQuality x = maybeHead (List.filter (\y -> (T.quality y) == Mobile) x)
 
 getUrl :: [VideoLink] -> String
 getUrl [] = []
