@@ -15,8 +15,12 @@ import Hockey.Database
 import Hockey.Formatting
        (formattedGame, formattedSeason, formattedYear, intToInteger,
         fromStrength, fromEventType, boolToInt)
-import Hockey.Types (Season(..))
+import Hockey.Types (Season(..), GameState(..))
 import Yesod
+
+timeOrTBD time state
+  | state == TBD = ""
+  | otherwise = show time
 
 -- Period
 instance ToJSON Period where
@@ -55,7 +59,7 @@ instance ToJSON Game where
       , "homeScore" .= gameHomeScore
       , "gameID" .= show gameGameId
       , "date" .= show gameDate
-      , "time" .= show gameTime
+      , "time" .= timeOrTBD gameTime gameState
       , "tv" .= gameTv
       , "period" .= gamePeriod
       , "periodTime" .= List.map Char.toUpper gamePeriodTime
