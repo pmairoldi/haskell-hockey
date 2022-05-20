@@ -237,14 +237,14 @@ toSeason 2 = Season
 toSeason 3 = Playoffs
 
 fromGameState :: GameState -> Integer
-fromGameState None = 1
-fromGameState Before = 2
-fromGameState Ongoing = 3
-fromGameState Overtime = 4
-fromGameState Shootout = 5
-fromGameState Ended = 6
-fromGameState Final = 7
-fromGameState TBD = 8
+fromGameState None = 1 -- Preview / Scheduled
+fromGameState Before = 2 -- Preview / Pre-Game
+fromGameState Ongoing = 3 -- Live / In Progress
+fromGameState Overtime = 4 -- 
+fromGameState Shootout = 5 --
+fromGameState Ended = 6 -- Final / Final
+fromGameState Final = 7 -- Final / Final
+fromGameState TBD = 8 -- Preview / Scheduled (Time TBD)
 
 toGameState :: Integer -> GameState
 toGameState 1 = None
