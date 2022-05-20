@@ -22,6 +22,12 @@ timeOrTBD time state
   | state == TBD = ""
   | otherwise = show time
 
+fixPeriod period state
+  | state == TBD = 0
+  | state == Hockey.Types.None = 0
+  | state == Before = 0
+  | otherwise = period
+
 -- Period
 instance ToJSON Period where
   toJSON Period {..} =
@@ -61,7 +67,7 @@ instance ToJSON Game where
       , "date" .= show gameDate
       , "time" .= timeOrTBD gameTime gameState
       , "tv" .= gameTv
-      , "period" .= gamePeriod
+      , "period" .= fixPeriod gamePeriod gameState
       , "periodTime" .= List.map Char.toUpper gamePeriodTime
       , "homeStatus" .= gameHomeStatus
       , "awayStatus" .= gameAwayStatus
