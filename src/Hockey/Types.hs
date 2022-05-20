@@ -77,7 +77,7 @@ data VideoQuality = Mobile | Tablet | Tablet60 | Wired | Wired60 | WiredWeb | Fl
 data Season = Preseason | Season | Playoffs deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "Season"
 
-data GameState = None | Before | Ongoing | Overtime | Ended | Final | TBD deriving (Enum, Show, Read, Eq, Generic)
+data GameState = None | Before | Ongoing | Overtime | Shootout | Ended | Final | TBD deriving (Enum, Show, Read, Eq, Generic)
 derivePersistField "GameState"
 
 data Strength = Normal | Powerplay | Shorthand deriving (Enum, Show, Read, Eq, Generic)
@@ -241,6 +241,7 @@ fromGameState None = 1
 fromGameState Before = 2
 fromGameState Ongoing = 3
 fromGameState Overtime = 4
+fromGameState Shootout = 5
 fromGameState Ended = 6
 fromGameState Final = 7
 fromGameState TBD = 8
@@ -250,6 +251,7 @@ toGameState 1 = None
 toGameState 2 = Before
 toGameState 3 = Ongoing
 toGameState 4 = Overtime
+toGameState 5 = Shootout
 toGameState 6 = Ended
 toGameState 7 = Final
 toGameState 8 = TBD
