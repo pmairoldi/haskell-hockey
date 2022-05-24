@@ -26,6 +26,7 @@ module Hockey.Database.Types (
     selectPeriods,
     selectSeeds,
     selectGamesForSeason,
+    selectGamesForSeason',
     selectEvents,
     selectGamesForSeries,
     updateGamesToInactive,
@@ -149,6 +150,11 @@ selectSeeds database year =  do
 selectGamesForSeason :: (MonadUnliftIO m) => Database -> Year -> Season -> m [Game]
 selectGamesForSeason database year season =  do
     games <- database `process` (selectList [GameYear ==. (integerToInt (fst year)), GameSeason ==. season] [])
+    return $ List.map entityVal games
+
+selectGamesForSeason' :: (MonadUnliftIO m) => Database -> Year -> Season -> m [Game]
+selectGamesForSeason' database year season =  do
+    games <- database `process` (selectList [GameYear ==. (integerToInt (fst year)), GameSeason ==. season, GameActive ==. True] [Asc GameDate, Asc GameTime])
     return $ List.map entityVal games
 
 selectEvents :: (MonadUnliftIO m) => Database -> Year -> Season -> m [Event]

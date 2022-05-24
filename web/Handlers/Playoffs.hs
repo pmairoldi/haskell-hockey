@@ -30,6 +30,6 @@ getPlayoffs sentYear =
     let yearString = show (fst year) ++ show (snd year)
     -- p <- selectPeriods (database e) year Playoffs
     seeds <- selectSeeds (database e) year
-    games <- selectGamesForSeason (database e) year Playoffs
+    games <- selectGamesForSeason' (database e) year Playoffs
     -- e <- selectEvents (database e) year Playoffs
     returnJson $ Bracket yearString $ map (toMatchup games) seeds
