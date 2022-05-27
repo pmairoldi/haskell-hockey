@@ -21,6 +21,16 @@ import Hockey.Types (Season(..), Team(..), GameState(..))
 import Hockey.Teams
 import Yesod
 
+timeOrTBD time state
+  | state == TBD = ""
+  | otherwise = show time
+
+fixPeriod period state
+  | state == TBD = 0
+  | state == Hockey.Types.None = 0
+  | state == Before = 0
+  | otherwise = period
+
 -- PlayoffSeed
 instance ToJSON PlayoffSeed where
   toJSON PlayoffSeed {..} =
@@ -42,10 +52,10 @@ instance ToJSON Game where
       [ "id" .= show gameGameId      
       , "awayTeam" .= GameTeam (teamByAbbreviation gameAwayId) gameAwayScore gameAwayStatus (emptyToMaybeString gameAwayCondense) (emptyToMaybeString gameAwayHighlight)
       , "homeTeam" .= GameTeam (teamByAbbreviation gameHomeId) gameHomeScore gameHomeStatus (emptyToMaybeString gameHomeCondense) (emptyToMaybeString gameHomeHighlight)
-      , "period" .= gamePeriod
+      , "period" .= fixPeriod gamePeriod gameState
       , "periodTime" .= List.map Char.toUpper gamePeriodTime
       , "date" .= show gameDate
-      , "time" .= show gameTime
+      , "time" .= timeOrTBD gameTime gameState
       , "tv" .= gameTv
       , "active" .= gameActive
       ]
