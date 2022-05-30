@@ -31,6 +31,11 @@ fixPeriod period state
   | state == Before = 0
   | otherwise = period
 
+fixStatus status state
+  | state == Ended = ""
+  | state == Final = ""
+  | otherwise = status
+
 -- PlayoffSeed
 instance ToJSON PlayoffSeed where
   toJSON PlayoffSeed {..} =
@@ -50,8 +55,8 @@ instance ToJSON Game where
   toJSON Game {..} =
     object
       [ "id" .= show gameGameId      
-      , "awayTeam" .= GameTeam (teamByAbbreviation gameAwayId) gameAwayScore gameAwayStatus (emptyToMaybeString gameAwayCondense) (emptyToMaybeString gameAwayHighlight)
-      , "homeTeam" .= GameTeam (teamByAbbreviation gameHomeId) gameHomeScore gameHomeStatus (emptyToMaybeString gameHomeCondense) (emptyToMaybeString gameHomeHighlight)
+      , "awayTeam" .= GameTeam (teamByAbbreviation gameAwayId) gameAwayScore (fixStatus gameAwayStatus gameState) (emptyToMaybeString gameAwayCondense) (emptyToMaybeString gameAwayHighlight)
+      , "homeTeam" .= GameTeam (teamByAbbreviation gameHomeId) gameHomeScore (fixStatus gameHomeStatus gameState) (emptyToMaybeString gameHomeCondense) (emptyToMaybeString gameHomeHighlight)
       , "period" .= fixPeriod gamePeriod gameState
       , "periodTime" .= List.map Char.toUpper gamePeriodTime
       , "date" .= show gameDate

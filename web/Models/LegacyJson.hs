@@ -28,6 +28,11 @@ fixPeriod period state
   | state == Before = 0
   | otherwise = period
 
+fixStatus status state
+  | state == Ended = ""
+  | state == Final = ""
+  | otherwise = status
+
 -- Period
 instance ToJSON Period where
   toJSON Period {..} =
@@ -69,8 +74,8 @@ instance ToJSON Game where
       , "tv" .= gameTv
       , "period" .= fixPeriod gamePeriod gameState
       , "periodTime" .= List.map Char.toUpper gamePeriodTime
-      , "homeStatus" .= gameHomeStatus
-      , "awayStatus" .= gameAwayStatus
+      , "homeStatus" .= fixStatus gameHomeStatus gameState
+      , "awayStatus" .= fixStatus gameAwayStatus gameState
       , "homeHighlight" .= gameHomeHighlight
       , "awayHighlight" .= gameAwayHighlight
       , "homeCondense" .= gameHomeCondense
