@@ -90,6 +90,8 @@ instance ToJSON Event where
       , "videoLink" .= eventVideoLink
       , "formalId" .= eventFormalId
       , "strength" .= fromStrength eventStrength
+      , "emptyNet" .= eventEmptyNet
+      , "players" .= show eventPlayers
       ]
 
 -- Team

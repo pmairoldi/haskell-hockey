@@ -18,6 +18,7 @@ mkYesod
 /Hockey/Playoffs LegacyPlayoffsR GET
 /bracket BracketR GET
 /bracket/#Year BracketWithYearR GET
+/games/#Int GameR GET
 |]
 
 cors

@@ -30,7 +30,10 @@ module Hockey.Database.Types (
     selectEvents,
     selectGamesForSeries,
     updateGamesToInactive,
-    deleteEvents
+    deleteEvents,
+    selectGame, 
+    selectGamePeriods, 
+    selectGameEvents
 )
 
 where
@@ -49,6 +52,8 @@ import Data.List as List
 import Data.Aeson
 import Control.Monad.IO.Unlift;
 import Control.Monad.Logger
+import Data.Maybe
+import Data.ByteString (ByteString(..))
 
 -- add Maybe monad to some type
 -- have videos be a map
@@ -101,6 +106,8 @@ Event
     videoLink String
     formalId String
     strength Strength
+    emptyNet Bool Maybe
+    players ByteString Maybe sqltype=jsonb
     UniqueEventId eventId gameId
     deriving Show
 Team
@@ -172,3 +179,20 @@ selectGamesForSeries database year topSeed bottomSeed = do
 
 updateGamesToInactive :: (MonadUnliftIO m) => Database -> [Game] -> m ()
 updateGamesToInactive db games = db `process` (updateWhere ([GameGameId <-. (List.map gameGameId games)] ++ ([GameState ==. None] ||. [GameState ==. TBD])) [GameActive =. False])
+
+selectGame :: (MonadUnliftIO m) => Database -> Int -> m (Maybe Game)
+selectGame database gameId = do
+    game <- database `process` (selectFirst ([GameGameId ==. gameId]) [])
+    case (game) of 
+        Just game -> return $ Just (entityVal game)
+        Nothing -> return $ Nothing
+
+selectGamePeriods :: (MonadUnliftIO m) => Database -> Int -> m [Period]
+selectGamePeriods database gameId = do
+    periods <- database `process` (selectList ([PeriodGameId ==. gameId]) [Asc PeriodPeriod])
+    return $ List.map entityVal periods
+
+selectGameEvents :: (MonadUnliftIO m) => Database -> Int -> m [Event]
+selectGameEvents database gameId = do
+    events <- database `process` (selectList ([EventGameId ==. gameId]) [Asc EventPeriod])
+    return $ List.map entityVal events
