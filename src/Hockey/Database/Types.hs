@@ -53,7 +53,7 @@ import Data.Aeson
 import Control.Monad.IO.Unlift;
 import Control.Monad.Logger
 import Data.Maybe
-import Data.ByteString (ByteString(..))
+import Data.Text (Text(..))
 
 -- add Maybe monad to some type
 -- have videos be a map
@@ -107,7 +107,7 @@ Event
     formalId String
     strength Strength
     emptyNet Bool Maybe
-    players ByteString Maybe sqltype=jsonb
+    players Text Maybe sqltype=jsonb
     UniqueEventId eventId gameId
     deriving Show
 Team

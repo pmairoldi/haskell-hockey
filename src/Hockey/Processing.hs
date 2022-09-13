@@ -25,6 +25,8 @@ import Data.Aeson
 import Data.Aeson.Types
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString as BS
+import Data.Text.Encoding (decodeUtf8)
+import Data.Text (Text(..))
 
 dbTeam :: T.Team -> DB.Team
 dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
@@ -180,9 +182,9 @@ fetchVideos game date = do
 
     return $ ((processLink awayHighlight), (processLink homeHighlight))
 
-jsonFromPlayers :: Maybe [PlayPlayer] -> Maybe BS.ByteString
+jsonFromPlayers :: Maybe [PlayPlayer] -> Maybe Text
 jsonFromPlayers players = case players of 
-    Just players -> Just(LBS.toStrict $ encode players)
+    Just players -> Just(decodeUtf8 $ LBS.toStrict $ encode players)
     Nothing -> Nothing
 
 dbEvent :: Int -> ET.Play -> DB.Event
