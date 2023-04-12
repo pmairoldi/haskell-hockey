@@ -21,6 +21,12 @@ import Hockey.Formatting
 import Data.List as List
 import Hockey.Playoffs as P
 import Data.Maybe
+import Data.Aeson
+import Data.Aeson.Types
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString as BS
+import Data.Text.Encoding (decodeUtf8)
+import Data.Text (Text(..))
 
 dbTeam :: T.Team -> DB.Team
 dbTeam team = DB.Team (T.abr team) (T.city team) (T.name team)
@@ -176,8 +182,13 @@ fetchVideos game date = do
 
     return $ ((processLink awayHighlight), (processLink homeHighlight))
 
+jsonFromPlayers :: Maybe [PlayPlayer] -> Maybe Text
+jsonFromPlayers players = case players of 
+    Just players -> Just(decodeUtf8 $ LBS.toStrict $ encode players)
+    Nothing -> Nothing
+
 dbEvent :: Int -> ET.Play -> DB.Event
-dbEvent gameId event = DB.Event (integerToInt (ET.eventId event)) (yearFromGameId gameId) (seasonFromGameId gameId) gameId (ET.playTeam event) (integerToInt (ET.period event)) (ET.time event) (ET.eventType event) (ET.description event) "" (ET.formalId event) (ET.playStrength event)
+dbEvent gameId event = DB.Event (integerToInt (ET.eventId event)) (yearFromGameId gameId) (seasonFromGameId gameId) gameId (ET.playTeam event) (integerToInt (ET.period event)) (ET.time event) (ET.eventType event) (ET.description event) "" (ET.formalId event) (ET.playStrength event) (ET.emptyNet event) (jsonFromPlayers (ET.players event))
 
 convertEvents :: Int -> [ET.Play] -> [DB.Event]
 convertEvents _ [] = []

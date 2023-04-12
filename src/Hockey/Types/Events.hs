@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Hockey.Types.Events (
     Events(..),
     LiveData(..),
     Plays(..),
     Play(..),
+    PlayPlayer(..),
     playTeam,
     playStrength
 )
@@ -39,6 +41,58 @@ instance FromJSON PlayStatus where
 parsePlayStatus v = PlayStatus <$>
     fmap toStrength (v .: "code")
 
+-- Player 
+data Player = Player {
+    id :: Integer,
+    fullName :: String,
+    link :: String
+} deriving (Show, Generic)
+
+instance ToJSON Player where
+  toJSON Player {..} =
+    object
+      [ "id" .= id
+      , "fullName" .= fullName
+      , "link" .= link
+      ]
+
+instance FromJSON Player where
+    parseJSON (Object v) = parsePlayer v
+    parseJSON _          = Applicative.empty
+
+parsePlayer v =  do
+    id <- v .: "id"
+    fullName <- v .: "fullName"
+    link <- v .: "link"
+
+    return $ Player id fullName link
+
+-- PlayPlayer 
+data PlayPlayer = PlayPlayer {
+    player :: Player,
+    playerType :: String,
+    seasonTotal :: Maybe Integer
+} deriving (Show, Generic)
+
+instance ToJSON PlayPlayer where
+  toJSON PlayPlayer {..} =
+    object
+      [ "player" .= player
+      , "playerType" .= playerType
+      , "seasonTotal" .= seasonTotal
+      ]
+
+instance FromJSON PlayPlayer where
+    parseJSON (Object v) = parsePlayPlayer v
+    parseJSON _          = Applicative.empty
+
+parsePlayPlayer v =  do
+    player <- v .: "player"
+    playerType <- v .: "playerType"
+    seasonTotal <- v .:? "seasonTotal"
+
+    return $ PlayPlayer player playerType seasonTotal
+
 -- Play
 data Play = Play {
    eventId :: Integer,
@@ -48,6 +102,8 @@ data Play = Play {
    description :: String, 
    formalId :: String,
    status :: Maybe PlayStatus,
+   emptyNet :: Maybe Bool,
+   players :: Maybe [PlayPlayer],
    team :: Maybe PlayTeam
 } deriving (Show, Generic)
 
@@ -68,10 +124,12 @@ parsePlay v =  do
     description <- result .: "description"
     formalId <- result .: "eventCode"
     strength <- result .:? "strength"
+    emptyNet <- result .:? "emptyNet"
 
     team <- v .:? "team"
+    players <- v .:? "players"
 
-    return $ Play eventId period time eventType description formalId strength team
+    return $ Play eventId period time eventType description formalId strength emptyNet players team 
 
 -- Plays
 newtype Plays = Plays{allPlays :: [Play]} deriving (Show, Generic)
