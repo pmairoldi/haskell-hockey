@@ -129,6 +129,16 @@ instance FromJSON Content where
         (v .:? "media")
     parseJSON _          = Applicative.empty
 
+
+emptyScoreInfo :: ScoreInfo
+emptyScoreInfo = ScoreInfo 0 0 False False
+
+emptyScoreTeams :: ScoreTeams
+emptyScoreTeams = ScoreTeams emptyScoreInfo emptyScoreInfo
+
+emptyLineScore:: Linescore 
+emptyLineScore = Linescore [] 0 "20:00" emptyScoreTeams
+
 -- Game
 instance FromJSON Game where
     parseJSON (Object v) = Game <$>
@@ -137,7 +147,7 @@ instance FromJSON Game where
         (v .: "gamePk") <*>
         (v .: "teams") <*>
         (v .:? "broadcasts" .!= []) <*>
-        (v .: "linescore") <*>
+        (v .:? "linescore" .!= emptyLineScore) <*>
         (v .: "status") <*>
         (v .: "content")
     parseJSON _          = Applicative.empty
